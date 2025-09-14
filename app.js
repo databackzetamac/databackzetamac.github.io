@@ -90,6 +90,21 @@
       btn.classList.toggle('active', btn===tabEl);
       btn.setAttribute('aria-selected', btn===tabEl? 'true':'false');
     });
+    // Animated slider indicator (if present)
+    const bar = document.querySelector('.tabbar');
+    if(bar){
+      let slider = bar.querySelector('.tab-slider');
+      if(!slider){
+        slider = document.createElement('div');
+        slider.className='tab-slider';
+        bar.appendChild(slider);
+      }
+      const rect = tabEl.getBoundingClientRect();
+      const parentRect = bar.getBoundingClientRect();
+      const left = rect.left - parentRect.left;
+      slider.style.width = rect.width + 'px';
+      slider.style.transform = `translateX(${left}px)`;
+    }
   }
 
   function navigateTab(target){
@@ -275,20 +290,37 @@
     drawBars(dom.timePerDayChart, ag.timePerDay, 'minutes');
   }
 
-  function drawProgressChart(canvas, points){ if(!canvas || !points.length) return; const ctx = canvas.getContext('2d'); const w=canvas.width, h=canvas.height; ctx.clearRect(0,0,w,h); const margin=30; const xs = points.map(p=>p.ts); const ys = points.map(p=>p.norm); const minY = 0; const maxY = Math.max(10, Math.ceil(Math.max(...ys)/10)*10); const minX = Math.min(...xs); const maxX = Math.max(...xs); const scaleX = x=> margin + ( (x-minX)/(maxX-minX||1) )*(w-2*margin); const scaleY = y=> h - margin - ( (y-minY)/(maxY-minY||1) )*(h-2*margin); // axes
-    ctx.strokeStyle='rgba(255,255,255,0.25)'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(margin, margin); ctx.lineTo(margin, h-margin); ctx.lineTo(w-margin, h-margin); ctx.stroke();
-    // grid
-    ctx.font='10px system-ui'; ctx.fillStyle='rgba(255,255,255,0.5)'; ctx.textAlign='right'; ctx.textBaseline='middle';
-    for(let y=0;y<=maxY;y+=Math.max(10, Math.round(maxY/6/10)*10)) { const py = scaleY(y); ctx.strokeStyle='rgba(255,255,255,0.08)'; ctx.beginPath(); ctx.moveTo(margin,py); ctx.lineTo(w-margin,py); ctx.stroke(); ctx.fillText(y, margin-6, py); }
-    // line
-    ctx.strokeStyle='#4f9cff'; ctx.lineWidth=2; ctx.beginPath(); points.forEach((p,i)=>{ const x=scaleX(p.ts), y=scaleY(p.norm); if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); }); ctx.stroke();
-    // points
-    ctx.fillStyle='#4f9cff'; points.forEach(p=>{ const x=scaleX(p.ts), y=scaleY(p.norm); ctx.beginPath(); ctx.arc(x,y,3,0,Math.PI*2); ctx.fill(); });
+  function prepCanvas(canvas){
+    if(!canvas) return null;
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    const logicalH = rect.height || canvas.height || 200;
+    canvas.width = rect.width * dpr;
+    canvas.height = logicalH * dpr;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr,dpr);
+    ctx.lineCap='round';
+    ctx.lineJoin='round';
+    ctx.font='11px "Inter", system-ui';
+    return { ctx, w: rect.width, h: logicalH };
   }
 
-  function drawDistributionChart(canvas, bins){ if(!canvas) return; const ctx=canvas.getContext('2d'); const w=canvas.width, h=canvas.height; ctx.clearRect(0,0,w,h); const entries = Object.entries(bins).sort((a,b)=> parseInt(a[0]) - parseInt(b[0])); if(!entries.length) return; const max = Math.max(...entries.map(e=>e[1])); const barW = (w-60)/entries.length; ctx.font='10px system-ui'; ctx.textAlign='center'; ctx.textBaseline='top'; entries.forEach((e,i)=>{ const [range,count]=e; const x=40 + i*barW; const barH = (count/max)*(h-50); const y = h-30-barH; const grad = ctx.createLinearGradient(0,y,0,y+barH); grad.addColorStop(0,'#4f9cff'); grad.addColorStop(1,'rgba(79,156,255,0.25)'); ctx.fillStyle=grad; ctx.fillRect(x,y,barW*0.7,barH); ctx.fillStyle='rgba(255,255,255,.7)'; ctx.fillText(count, x+barW*0.35, y-12); ctx.save(); ctx.translate(x+barW*0.35, h-25); ctx.rotate(-Math.PI/4); ctx.fillStyle='rgba(255,255,255,.55)'; ctx.fillText(range,0,0); ctx.restore(); }); }
+  function drawProgressChart(canvas, points){ if(!canvas || !points.length) return; const cv = prepCanvas(canvas); if(!cv) return; const {ctx,w,h}=cv; ctx.clearRect(0,0,w,h); const margin=34; const xs = points.map(p=>p.ts); const ys = points.map(p=>p.norm); const minY = 0; const maxY = Math.max(10, Math.ceil(Math.max(...ys)/10)*10); const minX = Math.min(...xs); const maxX = Math.max(...xs); const scaleX = x=> margin + ( (x-minX)/(maxX-minX||1) )*(w-2*margin); const scaleY = y=> h - margin - ( (y-minY)/(maxY-minY||1) )*(h-2*margin);
+    const bgGrad = ctx.createLinearGradient(0,0,0,h); bgGrad.addColorStop(0,'rgba(79,156,255,0.12)'); bgGrad.addColorStop(1,'rgba(79,156,255,0.02)'); ctx.fillStyle=bgGrad; ctx.fillRect(0,0,w,h);
+    ctx.textAlign='right'; ctx.textBaseline='middle'; const step = Math.max(10, Math.round(maxY/6/10)*10);
+    for(let y=0;y<=maxY;y+=step){ const py = scaleY(y); ctx.strokeStyle='rgba(255,255,255,0.09)'; ctx.beginPath(); ctx.moveTo(margin,py+0.5); ctx.lineTo(w-margin,py+0.5); ctx.stroke(); ctx.fillStyle='rgba(255,255,255,0.55)'; ctx.fillText(y, margin-8, py); }
+    ctx.strokeStyle='rgba(255,255,255,0.3)'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(margin+0.5, margin); ctx.lineTo(margin+0.5, h-margin); ctx.lineTo(w-margin, h-margin+0.5); ctx.stroke();
+    ctx.lineWidth=2.4; ctx.strokeStyle='rgba(79,156,255,0.3)'; ctx.beginPath(); points.forEach((p,i)=>{ const x=scaleX(p.ts), y=scaleY(p.norm); i?ctx.lineTo(x,y):ctx.moveTo(x,y); }); ctx.stroke();
+    ctx.lineWidth=2; const grad = ctx.createLinearGradient(0,0,w,0); grad.addColorStop(0,'#4f9cff'); grad.addColorStop(1,'#256dff'); ctx.strokeStyle=grad; ctx.beginPath(); points.forEach((p,i)=>{ const x=scaleX(p.ts), y=scaleY(p.norm); i?ctx.lineTo(x,y):ctx.moveTo(x,y); }); ctx.stroke();
+    const fillGrad = ctx.createLinearGradient(0,margin,0,h-margin); fillGrad.addColorStop(0,'rgba(79,156,255,0.20)'); fillGrad.addColorStop(1,'rgba(79,156,255,0)'); ctx.fillStyle=fillGrad; ctx.beginPath(); points.forEach((p,i)=>{ const x=scaleX(p.ts), y=scaleY(p.norm); i?ctx.lineTo(x,y):ctx.moveTo(x,y); }); ctx.lineTo(scaleX(points.at(-1).ts), h-margin); ctx.lineTo(scaleX(points[0].ts), h-margin); ctx.closePath(); ctx.fill();
+    ctx.fillStyle='#fff'; points.forEach(p=>{ const x=scaleX(p.ts), y=scaleY(p.norm); ctx.beginPath(); ctx.arc(x,y,3.2,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#256dff'; ctx.beginPath(); ctx.arc(x,y,2.1,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#fff'; });
+  }
 
-  function drawBars(canvas, obj, mode){ if(!canvas) return; const ctx=canvas.getContext('2d'); const w=canvas.width,h=canvas.height; ctx.clearRect(0,0,w,h); const entries = Object.entries(obj).sort((a,b)=> a[0]<b[0]?-1:1).slice(-30); if(!entries.length) return; const max = Math.max(...entries.map(e=> mode==='minutes'? e[1]/60 : e[1])); const barW=(w-60)/entries.length; ctx.font='10px system-ui'; ctx.textAlign='center'; ctx.textBaseline='top'; entries.forEach((e,i)=>{ let val = mode==='minutes'? e[1]/60 : e[1]; const x=40 + i*barW; const barH = (val/max)*(h-50); const y=h-30-barH; ctx.fillStyle='rgba(79,156,255,.55)'; ctx.fillRect(x,y,barW*0.65,barH); ctx.fillStyle='rgba(255,255,255,.7)'; ctx.fillText(mode==='minutes'? val.toFixed(1):val, x+barW*0.325, y-12); ctx.save(); ctx.translate(x+barW*0.325,h-25); ctx.rotate(-Math.PI/3.2); ctx.fillStyle='rgba(255,255,255,.5)'; ctx.fillText(e[0].slice(5),0,0); ctx.restore(); }); }
+  function drawDistributionChart(canvas, bins){ if(!canvas) return; const cv=prepCanvas(canvas); if(!cv) return; const {ctx,w,h}=cv; ctx.clearRect(0,0,w,h); const entries = Object.entries(bins).sort((a,b)=> parseInt(a[0]) - parseInt(b[0])); if(!entries.length) return; const max = Math.max(...entries.map(e=>e[1])); const barW = (w-70)/entries.length; ctx.textAlign='center'; ctx.textBaseline='top'; ctx.font='11px "Inter", system-ui'; ctx.strokeStyle='rgba(255,255,255,0.3)'; ctx.beginPath(); ctx.moveTo(40.5,10); ctx.lineTo(40.5,h-28.5); ctx.lineTo(w-20,h-28.5); ctx.stroke(); entries.forEach((e,i)=>{ const [range,count]=e; const x=48 + i*barW; const barH = (count/max)*(h-70); const y = (h-30)-barH; const grad = ctx.createLinearGradient(0,y,0,y+barH); grad.addColorStop(0,'#4f9cff'); grad.addColorStop(1,'rgba(79,156,255,0.15)'); ctx.fillStyle=grad; ctx.beginPath(); const bw = barW*0.62; const r = 6; ctx.moveTo(x, y+r); ctx.lineTo(x, y+barH-r); ctx.quadraticCurveTo(x, y+barH, x+r, y+barH); ctx.lineTo(x+bw-r, y+barH); ctx.quadraticCurveTo(x+bw, y+barH, x+bw, y+barH-r); ctx.lineTo(x+bw, y+r); ctx.quadraticCurveTo(x+bw, y, x+bw-r, y); ctx.lineTo(x+r, y); ctx.quadraticCurveTo(x, y, x, y+r); ctx.fill(); ctx.fillStyle='rgba(255,255,255,.75)'; ctx.fillText(count, x+bw/2, y-14); ctx.save(); ctx.translate(x+bw/2, h-18); ctx.rotate(-Math.PI/3.6); ctx.fillStyle='rgba(255,255,255,.55)'; ctx.fillText(range,0,0); ctx.restore(); }); }
+
+  function drawBars(canvas, obj, mode){ if(!canvas) return; const cv=prepCanvas(canvas); if(!cv) return; const {ctx,w,h}=cv; ctx.clearRect(0,0,w,h); const entries = Object.entries(obj).sort((a,b)=> a[0]<b[0]?-1:1).slice(-30); if(!entries.length) return; const max = Math.max(...entries.map(e=> mode==='minutes'? e[1]/60 : e[1])); const barW=(w-70)/entries.length; ctx.textAlign='center'; ctx.textBaseline='top'; ctx.font='11px "Inter", system-ui'; ctx.strokeStyle='rgba(255,255,255,0.25)'; ctx.beginPath(); ctx.moveTo(40.5,10); ctx.lineTo(40.5,h-28.5); ctx.lineTo(w-20,h-28.5); ctx.stroke(); entries.forEach((e,i)=>{ let val = mode==='minutes'? e[1]/60 : e[1]; const x=48 + i*barW; const bh = (val/max)*(h-70); const y=h-30-bh; const bw=barW*0.58; const grad=ctx.createLinearGradient(0,y,0,y+bh); grad.addColorStop(0,'rgba(79,156,255,.9)'); grad.addColorStop(1,'rgba(79,156,255,.25)'); ctx.fillStyle=grad; ctx.beginPath(); const r=6; ctx.moveTo(x,y+r); ctx.lineTo(x,y+bh-r); ctx.quadraticCurveTo(x,y+bh,x+r,y+bh); ctx.lineTo(x+bw-r,y+bh); ctx.quadraticCurveTo(x+bw,y+bh,x+bw,y+bh-r); ctx.lineTo(x+bw,y+r); ctx.quadraticCurveTo(x+bw,y,x+bw-r,y); ctx.lineTo(x+r,y); ctx.quadraticCurveTo(x,y,x,y+r); ctx.fill(); ctx.fillStyle='rgba(255,255,255,.75)'; ctx.fillText(mode==='minutes'? val.toFixed(1):val, x+bw/2, y-13); ctx.save(); ctx.translate(x+bw/2, h-18); ctx.rotate(-Math.PI/3.4); ctx.fillStyle='rgba(255,255,255,.55)'; ctx.fillText(e[0].slice(5),0,0); ctx.restore(); }); }
+
+  let resizeTO=null; window.addEventListener('resize', ()=>{ if(resizeTO) clearTimeout(resizeTO); resizeTO = setTimeout(()=>{ renderCharts(); }, 180); });
 
   function updateCookieAggregates(list){ try { const ag = computeAggregates(list); const cookieObj = { totalTests:ag.totalTests, totalTimeSec:ag.totalTimeSec, avgPps:ag.avgPps, lastScore: ag.scoreHistory.at(-1)?.raw || 0, lastUpdated: Date.now() }; const val = encodeURIComponent(JSON.stringify(cookieObj)); document.cookie = 'dbz_stats='+val+';max-age=31536000;path=/;SameSite=Lax'; } catch(e){ /* ignore */ } }
 
