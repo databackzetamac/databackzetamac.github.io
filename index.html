@@ -1,102 +1,128 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>DataBack Zetamac</title>
-  <link rel="stylesheet" href="styles.css" />
-</head>
-<body>
-  <header>
-    <h1>DataBack Zetamac (Alpha)</h1>
-  </header>
-
-  <main id="app">
-    <section id="settings" aria-label="Test Settings">
-      <form id="settingsForm">
-        <fieldset>
-          <legend>Operations</legend>
-          <label><input type="checkbox" name="ops" value="add" checked> +</label>
-          <label><input type="checkbox" name="ops" value="sub" checked> −</label>
-          <label><input type="checkbox" name="ops" value="mul" checked> ×</label>
-          <label><input type="checkbox" name="ops" value="div" checked> ÷</label>
-        </fieldset>
-        <fieldset>
-          <legend>Operation Ranges (defaults loaded)</legend>
-          <details open>
-            <summary><strong>Addition / Subtraction</strong> ( (2–100) ± (2–100) )</summary>
-            <div class="range-grid">
-              <label>A Min <input type="number" id="add_aMin" value="2" /></label>
-              <label>A Max <input type="number" id="add_aMax" value="100" /></label>
-              <label>B Min <input type="number" id="add_bMin" value="2" /></label>
-              <label>B Max <input type="number" id="add_bMax" value="100" /></label>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>DataBack Zetamac</title>
+    <meta name="description" content="Modern arithmetic speed drill with analytics." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="modern.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <nav class="topbar glass" aria-label="Primary">
+        <div class="brand">DataBack <span class="accent">Zetamac</span></div>
+        <div class="nav-actions">
+          <button id="themeToggle" class="ghost" aria-label="Toggle theme">🌗</button>
+          <a href="https://github.com/databackzetamac/databackzetamac.github.io" class="ghost" target="_blank" rel="noopener" aria-label="GitHub Repo">GitHub</a>
+        </div>
+      </nav>
+      <main id="app" class="content-area">
+        <section id="settingsView" class="panel glass active" aria-label="Test Settings">
+          <header class="panel-header">
+            <h1>Configure Session</h1>
+            <p class="subtitle">Speed drill • 2 minute default • instant feedback</p>
+          </header>
+          <form id="settingsForm" class="settings-grid">
+            <div class="card-group">
+              <h2 class="group-title">Operations</h2>
+              <div class="chips" id="opChips">
+                <label class="chip"><input type="checkbox" name="ops" value="add" checked><span>+</span></label>
+                <label class="chip"><input type="checkbox" name="ops" value="sub" checked><span>−</span></label>
+                <label class="chip"><input type="checkbox" name="ops" value="mul" checked><span>×</span></label>
+                <label class="chip"><input type="checkbox" name="ops" value="div" checked><span>÷</span></label>
+              </div>
             </div>
-          </details>
-          <details open>
-            <summary><strong>Multiplication</strong> ( (2–12) × (2–100) )</summary>
-            <div class="range-grid">
-              <label>Left Min <input type="number" id="mul_aMin" value="2" /></label>
-              <label>Left Max <input type="number" id="mul_aMax" value="12" /></label>
-              <label>Right Min <input type="number" id="mul_bMin" value="2" /></label>
-              <label>Right Max <input type="number" id="mul_bMax" value="100" /></label>
+            <div class="card-group ranges">
+              <h2 class="group-title">Ranges</h2>
+              <div class="range-cluster">
+                <h3>Add / Sub</h3>
+                <div class="inputs">
+                  <label>A Min<input type="number" id="add_aMin" value="2"/></label>
+                  <label>A Max<input type="number" id="add_aMax" value="100"/></label>
+                  <label>B Min<input type="number" id="add_bMin" value="2"/></label>
+                  <label>B Max<input type="number" id="add_bMax" value="100"/></label>
+                </div>
+              </div>
+              <div class="range-cluster">
+                <h3>Multiply</h3>
+                <div class="inputs">
+                  <label>L Min<input type="number" id="mul_aMin" value="2"/></label>
+                  <label>L Max<input type="number" id="mul_aMax" value="12"/></label>
+                  <label>R Min<input type="number" id="mul_bMin" value="2"/></label>
+                  <label>R Max<input type="number" id="mul_bMax" value="100"/></label>
+                </div>
+              </div>
+              <div class="range-cluster">
+                <h3>Division</h3>
+                <div class="inputs">
+                  <label>Div Min<input type="number" id="div_divisorMin" value="2"/></label>
+                  <label>Div Max<input type="number" id="div_divisorMax" value="12"/></label>
+                  <label>Q Min<input type="number" id="div_quotientMin" value="2"/></label>
+                  <label>Q Max<input type="number" id="div_quotientMax" value="100"/></label>
+                </div>
+              </div>
             </div>
-          </details>
-          <details open>
-            <summary><strong>Division</strong> ( multiplication reversed: (divisor 2–12) × (quotient 2–100) )</summary>
-            <div class="range-grid">
-              <label>Divisor Min <input type="number" id="div_divisorMin" value="2" /></label>
-              <label>Divisor Max <input type="number" id="div_divisorMax" value="12" /></label>
-              <label>Quotient Min <input type="number" id="div_quotientMin" value="2" /></label>
-              <label>Quotient Max <input type="number" id="div_quotientMax" value="100" /></label>
+            <div class="card-group">
+              <h2 class="group-title">Duration</h2>
+              <label class="select-wrap" id="durationLabel">Duration
+                <select id="duration">
+                  <option value="30">30 s</option>
+                  <option value="60">1 min</option>
+                  <option value="120" selected>2 min</option>
+                  <option value="300">5 min</option>
+                </select>
+              </label>
             </div>
-            <small>Dividend is divisor × quotient ensuring integer result.</small>
-          </details>
-        </fieldset>
-        <fieldset>
-          <legend id="durationLabel">Duration (seconds)</legend>
-          <select id="duration" aria-labelledby="durationLabel">
-            <option value="30">30</option>
-            <option value="60">60</option>
-            <option value="120" selected>120</option>
-            <option value="300">300</option>
-          </select>
-        </fieldset>
-        <button type="button" id="startBtn">Start</button>
-      </form>
-    </section>
-
-    <section id="session" class="hidden" aria-label="Active Session">
-      <div class="hud">
-        <div>Time: <span id="timeRemaining">--</span></div>
-        <div>Score: <span id="score">0</span></div>
-        <div>Streak: <span id="streak">0</span></div>
-      </div>
-      <div id="problemWrap">
-        <span id="leftOperand" class="operand">0</span>
-        <span id="operator" class="operator">+</span>
-        <span id="rightOperand" class="operand">0</span>
-        <span class="operator">=</span>
-        <input id="answerInput" type="text" autocomplete="off" inputmode="numeric" aria-label="Answer" />
-      </div>
-      <div id="feedback" aria-live="polite"></div>
-    </section>
-
-    <section id="results" class="hidden" aria-label="Results">
-      <h2>Session Summary</h2>
-      <div id="summary"></div>
-      <button id="restartBtn">New Session</button>
-    </section>
-
-    <section id="localStats" aria-label="Local Statistics">
-      <h2>Saved Sessions (Local)</h2>
-      <div id="statsList">No sessions yet.</div>
-    </section>
-  </main>
-
-  <footer>
-    <small>Future: richer analytics & charts. All data stored locally for now.</small>
-  </footer>
-
-  <script src="script.js"></script>
-</body>
+            <div class="actions-row">
+              <button type="button" id="startBtn" class="primary lg">Start Session →</button>
+            </div>
+          </form>
+        </section>
+        <section id="sessionView" class="panel glass" aria-label="Active Session">
+          <div class="session-hud">
+            <div class="metric"><span class="label">Time</span><span id="timeRemaining" class="value">--</span></div>
+            <div class="metric"><span class="label">Score</span><span id="score" class="value">0</span></div>
+            <div class="metric"><span class="label">Streak</span><span id="streak" class="value">0</span></div>
+            <div class="metric"><span class="label">Acc</span><span id="accuracyLive" class="value">--</span></div>
+          </div>
+          <div class="problem-wrap" role="group" aria-label="Current Problem">
+            <div class="expr">
+              <span id="leftOperand" class="operand">0</span>
+              <span id="operator" class="operator">+</span>
+              <span id="rightOperand" class="operand">0</span>
+              <span class="operator eq">=</span>
+            </div>
+            <input id="answerInput" class="answer" type="text" inputmode="numeric" autocomplete="off" aria-label="Answer" />
+            <div id="feedback" class="feedback" aria-live="polite"></div>
+          </div>
+          <div class="session-controls">
+            <button id="quitBtn" class="ghost">End Early</button>
+          </div>
+        </section>
+        <section id="resultsView" class="panel glass" aria-label="Results">
+          <header class="panel-header">
+            <h1>Session Summary</h1>
+          </header>
+          <div id="summary" class="summary-grid"></div>
+          <div class="actions-row">
+            <button id="restartBtn" class="primary">New Session</button>
+            <button id="backHome" class="ghost">Back to Settings</button>
+          </div>
+        </section>
+        <section id="historyView" class="panel glass" aria-label="Local History">
+          <header class="panel-header compact">
+            <h2>Recent Sessions</h2>
+          </header>
+          <div id="statsList" class="history-list">No sessions yet.</div>
+        </section>
+      </main>
+      <footer class="site-footer">
+        <span>Local data only • Future analytics & charts coming</span>
+      </footer>
+    </div>
+  <script src="app.js"></script>
+  </body>
 </html>

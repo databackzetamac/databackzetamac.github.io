@@ -1,41 +1,39 @@
-# DataBack Zetamac (Alpha)
+# DataBack Zetamac (Pure JS)
 
-Minimal first pass clone of core Zetamac arithmetic sprint functionality:
+Modern glassmorphic arithmetic speed drill (no build step, plain HTML/CSS/JS).
 
-- Random arithmetic problems across selectable operations (+, −, ×, ÷)
-- Per-operation adjustable number ranges:
-	- Addition: (2–100) + (2–100)
-	- Subtraction: addition pairs reversed to avoid negatives
-	- Multiplication: (2–12) × (2–100)
-	- Division: (divisor 2–12) × (quotient 2–100) reversed → (divisor*quotient) ÷ divisor = quotient
-- Durations: 30 / 60 / 120 / 300 seconds (easily extend)
-- Instant advance when correct answer typed (no Enter needed)
-- Tracks score, streak, max streak, accuracy
-- Integer-only division (problems constructed to guarantee integer answers)
-- Local session history persisted in `localStorage`
+## Features
+* Operation toggles: + − × ÷
+* Per–operation ranges (defaults):
+	* Addition: (2–100) + (2–100)
+	* Subtraction: same pairs reversed (no negatives)
+	* Multiplication: (2–12) × (2–100)
+	* Division: reversed multiplication (always integer)
+* Durations: 30s • 1m • 2m • 5m
+* Auto-advance on correct answer; Enter to force submit
+* Live metrics: score, streak, accuracy, time remaining
+* Post-session summary: score, answered, accuracy, max streak, duration
+* Session history (localStorage, last 30)
+* Dark / light theme toggle (persisted)
 
-## Running
-Just open `index.html` in a modern browser. No build step or dependencies.
+## Usage
+Just open `index.html` in a modern browser. No bundlers, no dependencies.
 
-## Keyboard Tips
-- Type answer; next problem loads automatically if correct
-- Press Enter to submit early if you've typed an incorrect value and want to move on (will be counted wrong)
-- Press Space (during session) to re-focus the answer box
+## Keyboard
+* Digits: type answer
+* Enter: submit current answer
+* Space: refocus answer field during a session
+* 🌗: toggle theme
 
-## Roadmap (Planned)
-1. Enhanced styling & responsive layout overhaul
-2. Difficulty presets / curated ranges
-3. Weighted problem generation & adaptive difficulty
-4. Detailed per-problem timeline & speed graph (client charts)
-5. User accounts & cloud sync (likely with Supabase or lightweight backend)
-6. Leaderboards & competitive modes
-7. Advanced operations (exponents, mixed operations, fractions, modulo) - optional toggles
-8. Accessibility pass (ARIA live regions, better focus management) & i18n
-9. Offline-first PWA packaging
-10. Export/import session history JSON / CSV
+## Roadmap (next)
+1. Optional sound / final countdown pulse
+2. Reduced-motion adjustments
+3. Inline accuracy sparkline
+4. Export / import session history (JSON)
+5. PWA manifest & offline caching
 
 ## Contributing
-Open a PR or issue with suggestions. Keep first iterations dependency-free.
+Open issues / PRs. Keep it dependency‑free for now.
 
 ## License
-MIT (to be added if desired) — currently unspecified, treat as all-rights reserved if absent.
+TBD (add LICENSE file) — treat as all rights reserved until license added.
