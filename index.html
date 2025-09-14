@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>DataBack Zetamac</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <h1>DataBack Zetamac (Alpha)</h1>
+  </header>
+
+  <main id="app">
+    <section id="settings" aria-label="Test Settings">
+      <form id="settingsForm">
+        <fieldset>
+          <legend>Operations</legend>
+          <label><input type="checkbox" name="ops" value="add" checked> +</label>
+          <label><input type="checkbox" name="ops" value="sub" checked> −</label>
+          <label><input type="checkbox" name="ops" value="mul" checked> ×</label>
+          <label><input type="checkbox" name="ops" value="div" checked> ÷</label>
+        </fieldset>
+        <fieldset>
+          <legend>Number Range</legend>
+          <label>Min <input type="number" id="rangeMin" value="0" /></label>
+          <label>Max <input type="number" id="rangeMax" value="12" /></label>
+          <small>Inclusive bounds. Division produces integer answers.</small>
+        </fieldset>
+        <fieldset>
+          <legend id="durationLabel">Duration (seconds)</legend>
+          <select id="duration" aria-labelledby="durationLabel">
+            <option value="30">30</option>
+            <option value="60">60</option>
+            <option value="120" selected>120</option>
+            <option value="300">300</option>
+          </select>
+        </fieldset>
+        <button type="button" id="startBtn">Start</button>
+      </form>
+    </section>
+
+    <section id="session" class="hidden" aria-label="Active Session">
+      <div class="hud">
+        <div>Time: <span id="timeRemaining">--</span></div>
+        <div>Score: <span id="score">0</span></div>
+        <div>Streak: <span id="streak">0</span></div>
+      </div>
+      <div id="problemWrap">
+        <span id="leftOperand" class="operand">0</span>
+        <span id="operator" class="operator">+</span>
+        <span id="rightOperand" class="operand">0</span>
+        <span class="operator">=</span>
+        <input id="answerInput" type="text" autocomplete="off" inputmode="numeric" aria-label="Answer" />
+      </div>
+      <div id="feedback" aria-live="polite"></div>
+    </section>
+
+    <section id="results" class="hidden" aria-label="Results">
+      <h2>Session Summary</h2>
+      <div id="summary"></div>
+      <button id="restartBtn">New Session</button>
+    </section>
+
+    <section id="localStats" aria-label="Local Statistics">
+      <h2>Saved Sessions (Local)</h2>
+      <div id="statsList">No sessions yet.</div>
+    </section>
+  </main>
+
+  <footer>
+    <small>Future: richer analytics & charts. All data stored locally for now.</small>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
