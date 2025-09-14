@@ -6,7 +6,7 @@
     settingsView: $('#settingsView'),
     sessionView: $('#sessionView'),
     resultsView: $('#resultsView'),
-    historyView: $('#historyView'),
+    statsView: $('#statsView'),
     startBtn: $('#startBtn'),
     restartBtn: $('#restartBtn'),
     backHome: $('#backHome'),
@@ -21,10 +21,18 @@
     operator: $('#operator'),
     feedback: $('#feedback'),
     summary: $('#summary'),
-    statsList: $('#statsList'),
+  statsList: $('#statsList'),
+  aggregateMetrics: $('#aggregateMetrics'),
     duration: $('#duration'),
     themeToggle: $('#themeToggle'),
-    settingsForm: $('#settingsForm')
+  settingsForm: $('#settingsForm'),
+  tabHome: $('#tabHome'),
+  tabTest: $('#tabTest'),
+  tabStats: $('#tabStats'),
+  progressChart: $('#progressChart'),
+  distributionChart: $('#distributionChart'),
+  testsPerDayChart: $('#testsPerDayChart'),
+  timePerDayChart: $('#timePerDayChart')
   };
 
   let state = null; // session state object
@@ -74,6 +82,22 @@
     dom.settingsView.classList.toggle('hidden', target!=='settings');
     dom.sessionView.classList.toggle('hidden', target!=='session');
     dom.resultsView.classList.toggle('hidden', target!=='results');
+    dom.statsView.classList.toggle('hidden', target!=='stats');
+  }
+
+  function activateTab(tabEl){
+    [dom.tabHome, dom.tabTest, dom.tabStats].forEach(btn=>{
+      btn.classList.toggle('active', btn===tabEl);
+      btn.setAttribute('aria-selected', btn===tabEl? 'true':'false');
+    });
+  }
+
+  function navigateTab(target){
+    switch(target){
+      case 'homeView': switchView('settings'); activateTab(dom.tabHome); break;
+      case 'sessionView': if(dom.tabTest.disabled) return; switchView('session'); activateTab(dom.tabTest); break;
+      case 'statsView': renderAggregates(); renderCharts(); switchView('stats'); activateTab(dom.tabStats); break;
+    }
   }
 
   function startSession(){
@@ -90,7 +114,8 @@
       totalAnswered:0, correct:0, incorrect:0,
       problems:[], ops, ranges, current:null
     };
-    switchView('session');
+  dom.tabTest.disabled = false; dom.tabTest.classList.remove('locked');
+  navigateTab('sessionView');
     dom.feedback.textContent='';
     dom.feedback.className='feedback';
     nextProblem();
@@ -148,10 +173,11 @@
   function endSession(){
     if(!state) return;
     if(timer){ clearInterval(timer); timer=null; }
-    buildSummary();
-    persistSession();
-    loadHistory();
-    switchView('results');
+  buildSummary();
+  persistSession();
+  loadHistory();
+  renderAggregates();
+  switchView('results');
   }
 
   function buildSummary(){
@@ -175,6 +201,7 @@
       const list = raw? JSON.parse(raw):[];
       list.push({ started:state.started,duration:state.duration,score:state.score,correct:state.correct,incorrect:state.incorrect,totalAnswered:state.totalAnswered,maxStreak:state.maxStreak,ops:state.ops,ranges:state.ranges });
       localStorage.setItem(LS_KEY, JSON.stringify(list));
+  updateCookieAggregates(list);
     }catch(e){ console.warn('Persist failed', e); }
   }
 
@@ -193,6 +220,78 @@
     }catch(e){ console.warn('History load failed', e); }
   }
 
+  /* Aggregates & Charts */
+  function computeAggregates(list){
+    const totalTests = list.length;
+    let totalTimeSec = 0, totalCorrect = 0, totalAnswered = 0;
+    const scoreHistory = [];
+    const bins = {}; // dynamic '0-10'
+    const testsPerDay = {};
+    const timePerDay = {};
+    list.forEach(s=>{
+      totalTimeSec += s.duration;
+      totalCorrect += s.correct;
+      totalAnswered += s.totalAnswered;
+      const norm = s.score * (120 / s.duration);
+      scoreHistory.push({ ts: s.started, norm: +norm.toFixed(2), raw: s.score });
+      const binFloor = Math.floor(norm/10)*10;
+      const key = binFloor+ '-' + (binFloor+10);
+      bins[key] = (bins[key]||0)+1;
+      const day = new Date(s.started).toISOString().slice(0,10);
+      testsPerDay[day] = (testsPerDay[day]||0)+1;
+      timePerDay[day] = (timePerDay[day]||0)+ s.duration;
+    });
+    scoreHistory.sort((a,b)=>a.ts-b.ts);
+    const avgPps = totalTimeSec? (totalCorrect/totalTimeSec).toFixed(2):'0.00';
+    return { totalTests, totalTimeSec, totalCorrect, totalAnswered, avgPps, scoreHistory, bins, testsPerDay, timePerDay };
+  }
+
+  function renderAggregates(){
+    try{
+      const raw = localStorage.getItem(LS_KEY); if(!raw){ dom.aggregateMetrics.innerHTML=''; return; }
+      const list = JSON.parse(raw); if(!Array.isArray(list)||!list.length){ dom.aggregateMetrics.innerHTML=''; return; }
+      const ag = computeAggregates(list);
+      const totalMinutes = (ag.totalTimeSec/60).toFixed(1);
+      const avgScore = (ag.scoreHistory.reduce((a,c)=>a+c.raw,0)/ag.scoreHistory.length).toFixed(1);
+      dom.aggregateMetrics.innerHTML = [
+        metricTile('Total Tests', ag.totalTests),
+        metricTile('Total Time (m)', totalMinutes),
+        metricTile('Avg Score', avgScore),
+        metricTile('Avg PPS', ag.avgPps),
+        metricTile('Total Correct', ag.totalCorrect),
+        metricTile('Total Answered', ag.totalAnswered)
+      ].join('');
+    }catch(e){ console.warn('Agg render failed', e); }
+  }
+  function metricTile(label,val){ return '<div class="metric-tile"><h4>'+label+'</h4><div class="val">'+val+'</div></div>'; }
+
+  function renderCharts(){
+    const raw = localStorage.getItem(LS_KEY); if(!raw) return;
+    let list = JSON.parse(raw); if(!Array.isArray(list)||!list.length) return;
+    const ag = computeAggregates(list);
+    drawProgressChart(dom.progressChart, ag.scoreHistory);
+    drawDistributionChart(dom.distributionChart, ag.bins);
+    drawBars(dom.testsPerDayChart, ag.testsPerDay, 'count');
+    drawBars(dom.timePerDayChart, ag.timePerDay, 'minutes');
+  }
+
+  function drawProgressChart(canvas, points){ if(!canvas || !points.length) return; const ctx = canvas.getContext('2d'); const w=canvas.width, h=canvas.height; ctx.clearRect(0,0,w,h); const margin=30; const xs = points.map(p=>p.ts); const ys = points.map(p=>p.norm); const minY = 0; const maxY = Math.max(10, Math.ceil(Math.max(...ys)/10)*10); const minX = Math.min(...xs); const maxX = Math.max(...xs); const scaleX = x=> margin + ( (x-minX)/(maxX-minX||1) )*(w-2*margin); const scaleY = y=> h - margin - ( (y-minY)/(maxY-minY||1) )*(h-2*margin); // axes
+    ctx.strokeStyle='rgba(255,255,255,0.25)'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(margin, margin); ctx.lineTo(margin, h-margin); ctx.lineTo(w-margin, h-margin); ctx.stroke();
+    // grid
+    ctx.font='10px system-ui'; ctx.fillStyle='rgba(255,255,255,0.5)'; ctx.textAlign='right'; ctx.textBaseline='middle';
+    for(let y=0;y<=maxY;y+=Math.max(10, Math.round(maxY/6/10)*10)) { const py = scaleY(y); ctx.strokeStyle='rgba(255,255,255,0.08)'; ctx.beginPath(); ctx.moveTo(margin,py); ctx.lineTo(w-margin,py); ctx.stroke(); ctx.fillText(y, margin-6, py); }
+    // line
+    ctx.strokeStyle='#4f9cff'; ctx.lineWidth=2; ctx.beginPath(); points.forEach((p,i)=>{ const x=scaleX(p.ts), y=scaleY(p.norm); if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); }); ctx.stroke();
+    // points
+    ctx.fillStyle='#4f9cff'; points.forEach(p=>{ const x=scaleX(p.ts), y=scaleY(p.norm); ctx.beginPath(); ctx.arc(x,y,3,0,Math.PI*2); ctx.fill(); });
+  }
+
+  function drawDistributionChart(canvas, bins){ if(!canvas) return; const ctx=canvas.getContext('2d'); const w=canvas.width, h=canvas.height; ctx.clearRect(0,0,w,h); const entries = Object.entries(bins).sort((a,b)=> parseInt(a[0]) - parseInt(b[0])); if(!entries.length) return; const max = Math.max(...entries.map(e=>e[1])); const barW = (w-60)/entries.length; ctx.font='10px system-ui'; ctx.textAlign='center'; ctx.textBaseline='top'; entries.forEach((e,i)=>{ const [range,count]=e; const x=40 + i*barW; const barH = (count/max)*(h-50); const y = h-30-barH; const grad = ctx.createLinearGradient(0,y,0,y+barH); grad.addColorStop(0,'#4f9cff'); grad.addColorStop(1,'rgba(79,156,255,0.25)'); ctx.fillStyle=grad; ctx.fillRect(x,y,barW*0.7,barH); ctx.fillStyle='rgba(255,255,255,.7)'; ctx.fillText(count, x+barW*0.35, y-12); ctx.save(); ctx.translate(x+barW*0.35, h-25); ctx.rotate(-Math.PI/4); ctx.fillStyle='rgba(255,255,255,.55)'; ctx.fillText(range,0,0); ctx.restore(); }); }
+
+  function drawBars(canvas, obj, mode){ if(!canvas) return; const ctx=canvas.getContext('2d'); const w=canvas.width,h=canvas.height; ctx.clearRect(0,0,w,h); const entries = Object.entries(obj).sort((a,b)=> a[0]<b[0]?-1:1).slice(-30); if(!entries.length) return; const max = Math.max(...entries.map(e=> mode==='minutes'? e[1]/60 : e[1])); const barW=(w-60)/entries.length; ctx.font='10px system-ui'; ctx.textAlign='center'; ctx.textBaseline='top'; entries.forEach((e,i)=>{ let val = mode==='minutes'? e[1]/60 : e[1]; const x=40 + i*barW; const barH = (val/max)*(h-50); const y=h-30-barH; ctx.fillStyle='rgba(79,156,255,.55)'; ctx.fillRect(x,y,barW*0.65,barH); ctx.fillStyle='rgba(255,255,255,.7)'; ctx.fillText(mode==='minutes'? val.toFixed(1):val, x+barW*0.325, y-12); ctx.save(); ctx.translate(x+barW*0.325,h-25); ctx.rotate(-Math.PI/3.2); ctx.fillStyle='rgba(255,255,255,.5)'; ctx.fillText(e[0].slice(5),0,0); ctx.restore(); }); }
+
+  function updateCookieAggregates(list){ try { const ag = computeAggregates(list); const cookieObj = { totalTests:ag.totalTests, totalTimeSec:ag.totalTimeSec, avgPps:ag.avgPps, lastScore: ag.scoreHistory.at(-1)?.raw || 0, lastUpdated: Date.now() }; const val = encodeURIComponent(JSON.stringify(cookieObj)); document.cookie = 'dbz_stats='+val+';max-age=31536000;path=/;SameSite=Lax'; } catch(e){ /* ignore */ } }
+
   function resetToSettings(){ switchView('settings'); state=null; }
 
   function toggleTheme(){ document.body.classList.toggle('light'); localStorage.setItem('dbz_theme', document.body.classList.contains('light')?'light':'dark'); }
@@ -206,10 +305,13 @@
     dom.answerInput.addEventListener('input', onAnswerInput);
     dom.answerInput.addEventListener('keydown', e=>{ if(e.key==='Enter') forceSubmit(); });
     document.addEventListener('keydown', e=>{ if(e.code==='Space' && state && !dom.sessionView.classList.contains('hidden')){ e.preventDefault(); dom.answerInput.focus(); } });
-    dom.themeToggle.addEventListener('click', toggleTheme);
+  dom.themeToggle.addEventListener('click', toggleTheme);
+  dom.tabHome.addEventListener('click', ()=>navigateTab('homeView'));
+  dom.tabTest.addEventListener('click', ()=>navigateTab('sessionView'));
+  dom.tabStats.addEventListener('click', ()=>navigateTab('statsView'));
   }
 
-  function init(){ loadTheme(); loadHistory(); attachEvents(); }
+  function init(){ loadTheme(); loadHistory(); renderAggregates(); attachEvents(); }
   if(document.readyState === 'complete' || document.readyState === 'interactive'){
     // Run on next tick to allow remaining synchronous parsing to finish
     setTimeout(init,0);

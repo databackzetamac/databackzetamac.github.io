@@ -15,6 +15,9 @@ Modern glassmorphic arithmetic speed drill (no build step, plain HTML/CSS/JS).
 * Post-session summary: score, answered, accuracy, max streak, duration
 * Session history (localStorage, last 30)
 * Dark / light theme toggle (persisted)
+* Tabbed UI (Home / Test / Stats) with locked Test tab until a session starts
+* Stats dashboard: score progression, distribution, tests per day, time per day, aggregate metrics
+* Normalized scores (scaled to 120s) for fair comparison
 
 ## Usage
 Just open `index.html` in a modern browser. No bundlers, no dependencies.
@@ -26,11 +29,12 @@ Just open `index.html` in a modern browser. No bundlers, no dependencies.
 * 🌗: toggle theme
 
 ## Roadmap (next)
-1. Optional sound / final countdown pulse
-2. Reduced-motion adjustments
-3. Inline accuracy sparkline
+1. Tooltip overlays on charts (cursor tracking)
+2. Optional sound / final countdown pulse
+3. Reduced-motion adjustments
 4. Export / import session history (JSON)
 5. PWA manifest & offline caching
+6. Cookie-based minimal sync fallback & privacy settings panel
 
 ## Contributing
 Open issues / PRs. Keep it dependency‑free for now.
