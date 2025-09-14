@@ -5,6 +5,9 @@ header h1{margin:0;font-size:1.4rem;letter-spacing:.5px}
 main{padding:1rem 1.5rem;max-width:900px;margin:0 auto;display:grid;gap:1.5rem}
 fieldset{border:1px solid #ccc;padding:.75rem 1rem;margin:0 0 1rem;border-radius:6px}
 legend{padding:0 .4rem;font-weight:600}
+.range-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:.5rem .75rem;margin:.6rem 0 1rem}
+details summary{cursor:pointer;outline:none}
+details{margin-bottom:.4rem}
 #problemWrap{font-size:2.5rem;display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;margin-top:2rem}
 #problemWrap .operand,#problemWrap .operator{min-width:2ch;text-align:center}
 #answerInput{font-size:2.2rem;width:6ch;padding:.3rem .4rem}

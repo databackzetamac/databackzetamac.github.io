@@ -22,10 +22,35 @@
           <label><input type="checkbox" name="ops" value="div" checked> ÷</label>
         </fieldset>
         <fieldset>
-          <legend>Number Range</legend>
-          <label>Min <input type="number" id="rangeMin" value="0" /></label>
-          <label>Max <input type="number" id="rangeMax" value="12" /></label>
-          <small>Inclusive bounds. Division produces integer answers.</small>
+          <legend>Operation Ranges (defaults loaded)</legend>
+          <details open>
+            <summary><strong>Addition / Subtraction</strong> ( (2–100) ± (2–100) )</summary>
+            <div class="range-grid">
+              <label>A Min <input type="number" id="add_aMin" value="2" /></label>
+              <label>A Max <input type="number" id="add_aMax" value="100" /></label>
+              <label>B Min <input type="number" id="add_bMin" value="2" /></label>
+              <label>B Max <input type="number" id="add_bMax" value="100" /></label>
+            </div>
+          </details>
+          <details open>
+            <summary><strong>Multiplication</strong> ( (2–12) × (2–100) )</summary>
+            <div class="range-grid">
+              <label>Left Min <input type="number" id="mul_aMin" value="2" /></label>
+              <label>Left Max <input type="number" id="mul_aMax" value="12" /></label>
+              <label>Right Min <input type="number" id="mul_bMin" value="2" /></label>
+              <label>Right Max <input type="number" id="mul_bMax" value="100" /></label>
+            </div>
+          </details>
+          <details open>
+            <summary><strong>Division</strong> ( multiplication reversed: (divisor 2–12) × (quotient 2–100) )</summary>
+            <div class="range-grid">
+              <label>Divisor Min <input type="number" id="div_divisorMin" value="2" /></label>
+              <label>Divisor Max <input type="number" id="div_divisorMax" value="12" /></label>
+              <label>Quotient Min <input type="number" id="div_quotientMin" value="2" /></label>
+              <label>Quotient Max <input type="number" id="div_quotientMax" value="100" /></label>
+            </div>
+            <small>Dividend is divisor × quotient ensuring integer result.</small>
+          </details>
         </fieldset>
         <fieldset>
           <legend id="durationLabel">Duration (seconds)</legend>

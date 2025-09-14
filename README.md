@@ -3,7 +3,11 @@
 Minimal first pass clone of core Zetamac arithmetic sprint functionality:
 
 - Random arithmetic problems across selectable operations (+, −, ×, ÷)
-- Adjustable number range (inclusive)
+- Per-operation adjustable number ranges:
+	- Addition: (2–100) + (2–100)
+	- Subtraction: addition pairs reversed to avoid negatives
+	- Multiplication: (2–12) × (2–100)
+	- Division: (divisor 2–12) × (quotient 2–100) reversed → (divisor*quotient) ÷ divisor = quotient
 - Durations: 30 / 60 / 120 / 300 seconds (easily extend)
 - Instant advance when correct answer typed (no Enter needed)
 - Tracks score, streak, max streak, accuracy

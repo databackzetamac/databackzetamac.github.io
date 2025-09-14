@@ -20,8 +20,16 @@
   const summaryEl = document.getElementById('summary');
   const statsListEl = document.getElementById('statsList');
   const durationSelect = document.getElementById('duration');
-  const rangeMinInput = document.getElementById('rangeMin');
-  const rangeMaxInput = document.getElementById('rangeMax');
+  // Range inputs per operation
+  const getRangeValues = () => {
+    const v = id => parseInt(document.getElementById(id).value,10);
+    return {
+      add: { aMin:v('add_aMin'), aMax:v('add_aMax'), bMin:v('add_bMin'), bMax:v('add_bMax') },
+      sub: { aMin:v('add_aMin'), aMax:v('add_aMax'), bMin:v('add_bMin'), bMax:v('add_bMax') }, // subtraction uses same as addition
+      mul: { aMin:v('mul_aMin'), aMax:v('mul_aMax'), bMin:v('mul_bMin'), bMax:v('mul_bMax') },
+      div: { divisorMin:v('div_divisorMin'), divisorMax:v('div_divisorMax'), quotientMin:v('div_quotientMin'), quotientMax:v('div_quotientMax') }
+    };
+  };
 
   let state = null;
   let tickTimer = null;
@@ -45,11 +53,22 @@
       alert('Select at least one operation');
       return;
     }
-    const min = parseInt(rangeMinInput.value, 10);
-    const max = parseInt(rangeMaxInput.value, 10);
-    if(isNaN(min)||isNaN(max)||min>max){
-      alert('Invalid range');
-      return;
+    const ranges = getRangeValues();
+    // Basic validation for each enabled op
+    for(const op of ops){
+      if(op === 'add' || op === 'sub' || op === 'mul'){
+        const r = ranges[op];
+        if([r.aMin,r.aMax,r.bMin,r.bMax].some(x=>isNaN(x)) || r.aMin>r.aMax || r.bMin>r.bMax){
+          alert('Invalid range for '+op);
+          return;
+        }
+      } else if(op === 'div'){
+        const r = ranges.div;
+        if([r.divisorMin,r.divisorMax,r.quotientMin,r.quotientMax].some(x=>isNaN(x)) || r.divisorMin>r.divisorMax || r.quotientMin>r.quotientMax){
+          alert('Invalid range for division');
+          return;
+        }
+      }
     }
     const duration = parseInt(durationSelect.value,10) || 120;
 
@@ -65,8 +84,7 @@
       incorrect: 0,
       problems: [], // {l, r, op, answer, correct, time}
       ops,
-      min,
-      max,
+  ranges,
       current: null
     };
 
@@ -105,31 +123,32 @@
 
   function generateProblem(){
     const op = state.ops[randInt(0,state.ops.length-1)];
-    let l, r, answer;
+  let l, r, answer;
+  const R = state.ranges;
     switch(op){
       case 'add':
-        l = randInt(state.min, state.max);
-        r = randInt(state.min, state.max);
+    l = randInt(R.add.aMin, R.add.aMax);
+    r = randInt(R.add.bMin, R.add.bMax);
         answer = l + r;
         break;
       case 'sub':
-        l = randInt(state.min, state.max);
-        r = randInt(state.min, state.max);
+    l = randInt(R.sub.aMin, R.sub.aMax);
+    r = randInt(R.sub.bMin, R.sub.bMax);
         // to avoid negatives if you want typical Zetamac style choose ordering
         if(l < r){ [l, r] = [r, l]; }
         answer = l - r;
         break;
       case 'mul':
-        l = randInt(state.min, state.max);
-        r = randInt(state.min, state.max);
+    l = randInt(R.mul.aMin, R.mul.aMax);
+    r = randInt(R.mul.bMin, R.mul.bMax);
         answer = l * r;
         break;
       case 'div':
-        // ensure integer division: pick answer & divisor then multiply
-        r = randInt(Math.max(1,state.min), Math.max(1,state.max));
-        answer = randInt(state.min, state.max);
-        l = r * answer;
-        if(l < state.min) l = state.min; // fallback though unlikely
+    // multiplication reversed: (divisor * quotient) ÷ divisor = quotient
+    const dR = R.div;
+    r = randInt(dR.divisorMin, dR.divisorMax); // divisor
+    answer = randInt(dR.quotientMin, dR.quotientMax); // quotient
+    l = r * answer; // dividend
         break;
       default:
         l = 0; r = 0; answer = 0;
