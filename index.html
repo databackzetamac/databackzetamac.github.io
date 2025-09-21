@@ -12,20 +12,77 @@
   </head>
   <body>
     <div class="app-shell">
-      <nav class="topbar glass" aria-label="Primary">
-        <div class="brand">DataBack <span class="accent">Zetamac</span></div>
-        <div class="nav-actions">
-          <button id="themeToggle" class="ghost" aria-label="Toggle theme">🌗</button>
-          <a href="https://github.com/databackzetamac/databackzetamac.github.io" class="ghost" target="_blank" rel="noopener" aria-label="GitHub Repo">GitHub</a>
-        </div>
-      </nav>
-      <div class="tabbar glass" role="tablist" aria-label="Main views">
-        <button class="tab active" role="tab" aria-selected="true" id="tabHome" data-target="homeView">Home</button>
-        <button class="tab locked" role="tab" aria-selected="false" id="tabTest" data-target="sessionView" disabled>Test</button>
-        <button class="tab" role="tab" aria-selected="false" id="tabStats" data-target="statsView">Stats</button>
+      <div class="navbar-container">
+        <nav class="navbar glass-enhanced" aria-label="Primary navigation">
+          <div class="nav-section nav-left">
+            <div class="brand-enhanced">
+              <div class="brand-icon">⚡</div>
+              <div class="brand-text">
+                <span class="brand-name">DataBack</span>
+                <span class="brand-accent">Zetamac</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="nav-section nav-center">
+            <div class="tabbar-enhanced" role="tablist" aria-label="Main views">
+              <button class="tab-enhanced active" role="tab" aria-selected="true" id="tabHome" data-target="homeView">
+                <span class="tab-icon">🏠</span>
+                <span class="tab-label">Home</span>
+              </button>
+              <button class="tab-enhanced locked" role="tab" aria-selected="false" id="tabTest" data-target="sessionView" disabled>
+                <span class="tab-icon">⚡</span>
+                <span class="tab-label">Test</span>
+              </button>
+              <button class="tab-enhanced" role="tab" aria-selected="false" id="tabStats" data-target="statsView">
+                <span class="tab-icon">📊</span>
+                <span class="tab-label">Stats</span>
+              </button>
+              <div class="tab-slider-enhanced"></div>
+            </div>
+          </div>
+          
+          <div class="nav-section nav-right">
+            <div class="user-profile" id="userProfile">
+              <div class="avatar-ring">
+                <div class="avatar">👤</div>
+              </div>
+              <div class="username-container">
+                <span class="username" id="usernameDisplay">Guest</span>
+                <input type="text" class="username-input hidden" id="usernameInput" maxlength="20" aria-label="Edit username" placeholder="Enter your name" />
+              </div>
+            </div>
+            <div class="nav-controls">
+              <button id="themeToggle" class="control-btn" aria-label="Toggle theme">
+                <span class="theme-icon">🌗</span>
+              </button>
+              <a href="https://github.com/databackzetamac/databackzetamac.github.io" class="control-btn" target="_blank" rel="noopener" aria-label="GitHub Repo">
+                <span class="github-icon">⚡</span>
+              </a>
+            </div>
+          </div>
+        </nav>
       </div>
       <main id="app" class="content-area">
         <section id="settingsView" class="panel glass active" aria-label="Test Settings" data-view="homeView">
+          <div class="hero-widget glass" aria-label="App overview widget">
+            <div class="hw-left">
+              <h1 class="app-title">DataBack <span>Zetamac</span></h1>
+              <p class="tagline">Fast arithmetic training with deep local analytics. No accounts. No tracking.</p>
+              <div class="quick-stats" id="quickStats">
+                <div class="qs-item"><span class="qs-label">Best</span><span class="qs-value" id="qsBest">--</span></div>
+                <div class="qs-item"><span class="qs-label">Avg</span><span class="qs-value" id="qsAvg">--</span></div>
+                <div class="qs-item"><span class="qs-label">Sessions</span><span class="qs-value" id="qsCount">--</span></div>
+              </div>
+            </div>
+            <div class="hw-art" aria-hidden="true">
+              <div class="blob b1"></div>
+              <div class="blob b2"></div>
+              <div class="rings">
+                <span></span><span></span><span></span>
+              </div>
+            </div>
+          </div>
           <header class="panel-header">
             <h1>Configure Session</h1>
             <p class="subtitle">Speed drill • 2 minute default • instant feedback</p>
@@ -93,14 +150,14 @@
             <div class="metric"><span class="label">Streak</span><span id="streak" class="value">0</span></div>
             <div class="metric"><span class="label">Acc</span><span id="accuracyLive" class="value">--</span></div>
           </div>
-          <div class="problem-wrap" role="group" aria-label="Current Problem">
-            <div class="expr">
-              <span id="leftOperand" class="operand">0</span>
-              <span id="operator" class="operator">+</span>
-              <span id="rightOperand" class="operand">0</span>
+          <div class="problem-wrap inactive" role="group" aria-label="Current Problem">
+            <div class="expr" id="problemExpr">
+              <span id="leftOperand" class="operand"></span>
+              <span id="operator" class="operator"></span>
+              <span id="rightOperand" class="operand"></span>
               <span class="operator eq">=</span>
             </div>
-            <input id="answerInput" class="answer" type="text" inputmode="numeric" autocomplete="off" aria-label="Answer" />
+            <input id="answerInput" class="answer" type="text" inputmode="numeric" autocomplete="off" aria-label="Answer" disabled />
             <div id="feedback" class="feedback" aria-live="polite"></div>
           </div>
           <div class="session-controls">

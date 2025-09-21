@@ -1,0 +1,13 @@
+{
+  "name": "databack-zetamac",
+  "version": "0.2.0",
+  "description": "Modern glassmorphic arithmetic speed drill (DataBack Zetamac)",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0"
+  }
+}

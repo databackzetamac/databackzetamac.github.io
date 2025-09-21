@@ -90,18 +90,18 @@
       btn.classList.toggle('active', btn===tabEl);
       btn.setAttribute('aria-selected', btn===tabEl? 'true':'false');
     });
-    // Animated slider indicator (if present)
-    const bar = document.querySelector('.tabbar');
+    // Enhanced animated slider indicator
+    const bar = document.querySelector('.tabbar-enhanced');
     if(bar){
-      let slider = bar.querySelector('.tab-slider');
+      let slider = bar.querySelector('.tab-slider-enhanced');
       if(!slider){
         slider = document.createElement('div');
-        slider.className='tab-slider';
+        slider.className='tab-slider-enhanced';
         bar.appendChild(slider);
       }
       const rect = tabEl.getBoundingClientRect();
       const parentRect = bar.getBoundingClientRect();
-      const left = rect.left - parentRect.left;
+      const left = rect.left - parentRect.left - 6; // Account for container padding
       slider.style.width = rect.width + 'px';
       slider.style.transform = `translateX(${left}px)`;
     }
@@ -131,6 +131,9 @@
     };
   dom.tabTest.disabled = false; dom.tabTest.classList.remove('locked');
   navigateTab('sessionView');
+    const wrap = document.querySelector('.problem-wrap');
+    if(wrap) wrap.classList.remove('inactive');
+    dom.answerInput.removeAttribute('disabled');
     dom.feedback.textContent='';
     dom.feedback.className='feedback';
     nextProblem();
@@ -232,6 +235,17 @@
         return '<div class="session-item"><strong>'+s.score+'</strong><span>'+acc+'%</span><span>'+s.totalAnswered+'q</span><span class="badge">'+date+'</span></div>';
       });
       dom.statsList.innerHTML = items.join('');
+      // Hero quick stats
+      const qsBest = document.getElementById('qsBest');
+      if(qsBest){
+        const qsAvg = document.getElementById('qsAvg');
+        const qsCount = document.getElementById('qsCount');
+        const best = Math.max(...list.map(s=>s.score));
+        const avg = list.reduce((a,s)=>a+s.score,0)/list.length;
+        qsBest.textContent = best.toString();
+        if(qsAvg) qsAvg.textContent = Math.round(avg).toString();
+        if(qsCount) qsCount.textContent = list.length.toString();
+      }
     }catch(e){ console.warn('History load failed', e); }
   }
 
@@ -305,20 +319,24 @@
     return { ctx, w: rect.width, h: logicalH };
   }
 
-  function drawProgressChart(canvas, points){ if(!canvas || !points.length) return; const cv = prepCanvas(canvas); if(!cv) return; const {ctx,w,h}=cv; ctx.clearRect(0,0,w,h); const margin=34; const xs = points.map(p=>p.ts); const ys = points.map(p=>p.norm); const minY = 0; const maxY = Math.max(10, Math.ceil(Math.max(...ys)/10)*10); const minX = Math.min(...xs); const maxX = Math.max(...xs); const scaleX = x=> margin + ( (x-minX)/(maxX-minX||1) )*(w-2*margin); const scaleY = y=> h - margin - ( (y-minY)/(maxY-minY||1) )*(h-2*margin);
+  function drawProgressChart(canvas, points){ if(!canvas || !points.length) return; const cv = prepCanvas(canvas); if(!cv) return; const {ctx,w,h}=cv; ctx.clearRect(0,0,w,h); const margin=36; const xs = points.map(p=>p.ts); const ys = points.map(p=>p.norm); const minY = 0; const rawMax = Math.max(...ys); const headroom = rawMax * 0.15 + 5; const maxY = Math.max(10, Math.ceil((rawMax+headroom)/10)*10); const minX = Math.min(...xs); const maxX = Math.max(...xs); const scaleX = x=> margin + ( (x-minX)/(maxX-minX||1) )*(w-2*margin); const scaleY = y=> h - margin - ( (y-minY)/(maxY-minY||1) )*(h-2*margin);
     const bgGrad = ctx.createLinearGradient(0,0,0,h); bgGrad.addColorStop(0,'rgba(79,156,255,0.12)'); bgGrad.addColorStop(1,'rgba(79,156,255,0.02)'); ctx.fillStyle=bgGrad; ctx.fillRect(0,0,w,h);
     ctx.textAlign='right'; ctx.textBaseline='middle'; const step = Math.max(10, Math.round(maxY/6/10)*10);
     for(let y=0;y<=maxY;y+=step){ const py = scaleY(y); ctx.strokeStyle='rgba(255,255,255,0.09)'; ctx.beginPath(); ctx.moveTo(margin,py+0.5); ctx.lineTo(w-margin,py+0.5); ctx.stroke(); ctx.fillStyle='rgba(255,255,255,0.55)'; ctx.fillText(y, margin-8, py); }
     ctx.strokeStyle='rgba(255,255,255,0.3)'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(margin+0.5, margin); ctx.lineTo(margin+0.5, h-margin); ctx.lineTo(w-margin, h-margin+0.5); ctx.stroke();
-    ctx.lineWidth=2.4; ctx.strokeStyle='rgba(79,156,255,0.3)'; ctx.beginPath(); points.forEach((p,i)=>{ const x=scaleX(p.ts), y=scaleY(p.norm); i?ctx.lineTo(x,y):ctx.moveTo(x,y); }); ctx.stroke();
-    ctx.lineWidth=2; const grad = ctx.createLinearGradient(0,0,w,0); grad.addColorStop(0,'#4f9cff'); grad.addColorStop(1,'#256dff'); ctx.strokeStyle=grad; ctx.beginPath(); points.forEach((p,i)=>{ const x=scaleX(p.ts), y=scaleY(p.norm); i?ctx.lineTo(x,y):ctx.moveTo(x,y); }); ctx.stroke();
-    const fillGrad = ctx.createLinearGradient(0,margin,0,h-margin); fillGrad.addColorStop(0,'rgba(79,156,255,0.20)'); fillGrad.addColorStop(1,'rgba(79,156,255,0)'); ctx.fillStyle=fillGrad; ctx.beginPath(); points.forEach((p,i)=>{ const x=scaleX(p.ts), y=scaleY(p.norm); i?ctx.lineTo(x,y):ctx.moveTo(x,y); }); ctx.lineTo(scaleX(points.at(-1).ts), h-margin); ctx.lineTo(scaleX(points[0].ts), h-margin); ctx.closePath(); ctx.fill();
+  // build smoothed path (Catmull-Rom to Bezier approximation)
+  function smoothPath(pts){ if(pts.length<3) return pts.map((p,i)=> (i?'L':'M')+scaleX(p.ts)+','+scaleY(p.norm)).join(''); const res=[]; for(let i=0;i<pts.length-1;i++){ const p0=pts[i-1]||pts[i]; const p1=pts[i]; const p2=pts[i+1]; const p3=pts[i+2]||p2; const x1=scaleX(p1.ts), y1=scaleY(p1.norm); const x2=scaleX(p2.ts), y2=scaleY(p2.norm); const cp1x = x1 + (x2 - scaleX(p0.ts))/6; const cp1y = y1 + (y2 - scaleY(p0.norm))/6; const cp2x = x2 - (scaleX(p3.ts) - x1)/6; const cp2y = y2 - (scaleY(p3.norm) - y1)/6; if(i===0) res.push('M'+x1+','+y1); res.push('C'+cp1x+','+cp1y+','+cp2x+','+cp2y+','+x2+','+y2); } return res.join(''); }
+  const pathData = smoothPath(points);
+  const p = new Path2D(pathData);
+  ctx.lineWidth=2.6; ctx.strokeStyle='rgba(79,156,255,0.3)'; ctx.stroke(p);
+  ctx.lineWidth=2.1; const grad = ctx.createLinearGradient(0,0,w,0); grad.addColorStop(0,'#4f9cff'); grad.addColorStop(1,'#256dff'); ctx.strokeStyle=grad; ctx.stroke(p);
+  const fillGrad = ctx.createLinearGradient(0,margin,0,h-margin); fillGrad.addColorStop(0,'rgba(79,156,255,0.16)'); fillGrad.addColorStop(1,'rgba(79,156,255,0)'); ctx.fillStyle=fillGrad; const areaPath = new Path2D(pathData + 'L'+scaleX(points.at(-1).ts)+','+scaleY(0)+'L'+scaleX(points[0].ts)+','+scaleY(0)+'Z'); ctx.fill(areaPath);
     ctx.fillStyle='#fff'; points.forEach(p=>{ const x=scaleX(p.ts), y=scaleY(p.norm); ctx.beginPath(); ctx.arc(x,y,3.2,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#256dff'; ctx.beginPath(); ctx.arc(x,y,2.1,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#fff'; });
   }
 
-  function drawDistributionChart(canvas, bins){ if(!canvas) return; const cv=prepCanvas(canvas); if(!cv) return; const {ctx,w,h}=cv; ctx.clearRect(0,0,w,h); const entries = Object.entries(bins).sort((a,b)=> parseInt(a[0]) - parseInt(b[0])); if(!entries.length) return; const max = Math.max(...entries.map(e=>e[1])); const barW = (w-70)/entries.length; ctx.textAlign='center'; ctx.textBaseline='top'; ctx.font='11px "Inter", system-ui'; ctx.strokeStyle='rgba(255,255,255,0.3)'; ctx.beginPath(); ctx.moveTo(40.5,10); ctx.lineTo(40.5,h-28.5); ctx.lineTo(w-20,h-28.5); ctx.stroke(); entries.forEach((e,i)=>{ const [range,count]=e; const x=48 + i*barW; const barH = (count/max)*(h-70); const y = (h-30)-barH; const grad = ctx.createLinearGradient(0,y,0,y+barH); grad.addColorStop(0,'#4f9cff'); grad.addColorStop(1,'rgba(79,156,255,0.15)'); ctx.fillStyle=grad; ctx.beginPath(); const bw = barW*0.62; const r = 6; ctx.moveTo(x, y+r); ctx.lineTo(x, y+barH-r); ctx.quadraticCurveTo(x, y+barH, x+r, y+barH); ctx.lineTo(x+bw-r, y+barH); ctx.quadraticCurveTo(x+bw, y+barH, x+bw, y+barH-r); ctx.lineTo(x+bw, y+r); ctx.quadraticCurveTo(x+bw, y, x+bw-r, y); ctx.lineTo(x+r, y); ctx.quadraticCurveTo(x, y, x, y+r); ctx.fill(); ctx.fillStyle='rgba(255,255,255,.75)'; ctx.fillText(count, x+bw/2, y-14); ctx.save(); ctx.translate(x+bw/2, h-18); ctx.rotate(-Math.PI/3.6); ctx.fillStyle='rgba(255,255,255,.55)'; ctx.fillText(range,0,0); ctx.restore(); }); }
+  function drawDistributionChart(canvas, bins){ if(!canvas) return; const cv=prepCanvas(canvas); if(!cv) return; const {ctx,w,h}=cv; ctx.clearRect(0,0,w,h); const entries = Object.entries(bins).sort((a,b)=> parseInt(a[0]) - parseInt(b[0])); if(!entries.length) return; const max = Math.max(...entries.map(e=>e[1])); const barW = (w-90)/entries.length; const leftPad=46; const bottomPad=34; ctx.textAlign='center'; ctx.textBaseline='top'; ctx.font='11px "Inter", system-ui'; ctx.strokeStyle='rgba(255,255,255,0.28)'; ctx.beginPath(); ctx.moveTo(leftPad+0.5,10); ctx.lineTo(leftPad+0.5,h-bottomPad); ctx.lineTo(w-20,h-bottomPad); ctx.stroke(); entries.forEach((e,i)=>{ const [range,count]=e; const x=leftPad + 8 + i*barW; const barH = (count/max)*(h- (bottomPad+40)); const y = (h-bottomPad)-barH; const grad = ctx.createLinearGradient(0,y,0,y+barH); grad.addColorStop(0,'#4f9cff'); grad.addColorStop(1,'rgba(79,156,255,0.12)'); ctx.fillStyle=grad; ctx.beginPath(); const bw = Math.max(18, barW*0.58); const r = 6; ctx.moveTo(x, y+r); ctx.lineTo(x, y+barH-r); ctx.quadraticCurveTo(x, y+barH, x+r, y+barH); ctx.lineTo(x+bw-r, y+barH); ctx.quadraticCurveTo(x+bw, y+barH, x+bw, y+barH-r); ctx.lineTo(x+bw, y+r); ctx.quadraticCurveTo(x+bw, y, x+bw-r, y); ctx.lineTo(x+r, y); ctx.quadraticCurveTo(x, y, x, y+r); ctx.fill(); ctx.fillStyle='rgba(255,255,255,.75)'; ctx.fillText(count, x+bw/2, y-14); ctx.save(); ctx.translate(x+bw/2, h-16); ctx.rotate(-Math.PI/4.2); ctx.fillStyle='rgba(255,255,255,.5)'; ctx.fillText(range,0,0); ctx.restore(); }); }
 
-  function drawBars(canvas, obj, mode){ if(!canvas) return; const cv=prepCanvas(canvas); if(!cv) return; const {ctx,w,h}=cv; ctx.clearRect(0,0,w,h); const entries = Object.entries(obj).sort((a,b)=> a[0]<b[0]?-1:1).slice(-30); if(!entries.length) return; const max = Math.max(...entries.map(e=> mode==='minutes'? e[1]/60 : e[1])); const barW=(w-70)/entries.length; ctx.textAlign='center'; ctx.textBaseline='top'; ctx.font='11px "Inter", system-ui'; ctx.strokeStyle='rgba(255,255,255,0.25)'; ctx.beginPath(); ctx.moveTo(40.5,10); ctx.lineTo(40.5,h-28.5); ctx.lineTo(w-20,h-28.5); ctx.stroke(); entries.forEach((e,i)=>{ let val = mode==='minutes'? e[1]/60 : e[1]; const x=48 + i*barW; const bh = (val/max)*(h-70); const y=h-30-bh; const bw=barW*0.58; const grad=ctx.createLinearGradient(0,y,0,y+bh); grad.addColorStop(0,'rgba(79,156,255,.9)'); grad.addColorStop(1,'rgba(79,156,255,.25)'); ctx.fillStyle=grad; ctx.beginPath(); const r=6; ctx.moveTo(x,y+r); ctx.lineTo(x,y+bh-r); ctx.quadraticCurveTo(x,y+bh,x+r,y+bh); ctx.lineTo(x+bw-r,y+bh); ctx.quadraticCurveTo(x+bw,y+bh,x+bw,y+bh-r); ctx.lineTo(x+bw,y+r); ctx.quadraticCurveTo(x+bw,y,x+bw-r,y); ctx.lineTo(x+r,y); ctx.quadraticCurveTo(x,y,x,y+r); ctx.fill(); ctx.fillStyle='rgba(255,255,255,.75)'; ctx.fillText(mode==='minutes'? val.toFixed(1):val, x+bw/2, y-13); ctx.save(); ctx.translate(x+bw/2, h-18); ctx.rotate(-Math.PI/3.4); ctx.fillStyle='rgba(255,255,255,.55)'; ctx.fillText(e[0].slice(5),0,0); ctx.restore(); }); }
+  function drawBars(canvas, obj, mode){ if(!canvas) return; const cv=prepCanvas(canvas); if(!cv) return; const {ctx,w,h}=cv; ctx.clearRect(0,0,w,h); const entries = Object.entries(obj).sort((a,b)=> a[0]<b[0]?-1:1).slice(-30); if(!entries.length) return; const max = Math.max(...entries.map(e=> mode==='minutes'? e[1]/60 : e[1])); const barW=(w-90)/entries.length; const leftPad=46; const bottomPad=34; ctx.textAlign='center'; ctx.textBaseline='top'; ctx.font='11px "Inter", system-ui'; ctx.strokeStyle='rgba(255,255,255,0.22)'; ctx.beginPath(); ctx.moveTo(leftPad+0.5,10); ctx.lineTo(leftPad+0.5,h-bottomPad); ctx.lineTo(w-20,h-bottomPad); ctx.stroke(); entries.forEach((e,i)=>{ let val = mode==='minutes'? e[1]/60 : e[1]; const x=leftPad + 8 + i*barW; const bh = (val/max)*(h-(bottomPad+40)); const y=h-bottomPad-bh; const bw=Math.max(18, barW*0.5); const grad=ctx.createLinearGradient(0,y,0,y+bh); grad.addColorStop(0,'rgba(79,156,255,.85)'); grad.addColorStop(1,'rgba(79,156,255,.25)'); ctx.fillStyle=grad; ctx.beginPath(); const r=6; ctx.moveTo(x,y+r); ctx.lineTo(x,y+bh-r); ctx.quadraticCurveTo(x,y+bh,x+r,y+bh); ctx.lineTo(x+bw-r,y+bh); ctx.quadraticCurveTo(x+bw,y+bh,x+bw,y+bh-r); ctx.lineTo(x+bw,y+r); ctx.quadraticCurveTo(x+bw,y,x+bw-r,y); ctx.lineTo(x+r,y); ctx.quadraticCurveTo(x,y,x,y+r); ctx.fill(); ctx.fillStyle='rgba(255,255,255,.78)'; ctx.fillText(mode==='minutes'? val.toFixed(1):val, x+bw/2, y-12); ctx.save(); ctx.translate(x+bw/2, h-16); ctx.rotate(-Math.PI/4.2); ctx.fillStyle='rgba(255,255,255,.5)'; ctx.fillText(e[0].slice(5),0,0); ctx.restore(); }); }
 
   let resizeTO=null; window.addEventListener('resize', ()=>{ if(resizeTO) clearTimeout(resizeTO); resizeTO = setTimeout(()=>{ renderCharts(); }, 180); });
 
@@ -328,6 +346,18 @@
 
   function toggleTheme(){ document.body.classList.toggle('light'); localStorage.setItem('dbz_theme', document.body.classList.contains('light')?'light':'dark'); }
   function loadTheme(){ const t = localStorage.getItem('dbz_theme'); if(t==='light') document.body.classList.add('light'); }
+
+  function loadUsername(){
+    const cookies = document.cookie.split(';');
+    const usernameCookie = cookies.find(c => c.trim().startsWith('dbz_username='));
+    if(usernameCookie){
+      const username = decodeURIComponent(usernameCookie.split('=')[1]);
+      const usernameDisplay = document.getElementById('usernameDisplay');
+      if(usernameDisplay && username && username !== 'Guest'){
+        usernameDisplay.textContent = username;
+      }
+    }
+  }
 
   function attachEvents(){
     dom.startBtn.addEventListener('click', startSession);
@@ -341,9 +371,44 @@
   dom.tabHome.addEventListener('click', ()=>navigateTab('homeView'));
   dom.tabTest.addEventListener('click', ()=>navigateTab('sessionView'));
   dom.tabStats.addEventListener('click', ()=>navigateTab('statsView'));
+  
+  // Username functionality
+  const usernameDisplay = document.getElementById('usernameDisplay');
+  const usernameInput = document.getElementById('usernameInput');
+  const userProfile = document.getElementById('userProfile');
+  
+  if(usernameDisplay && usernameInput && userProfile){
+    // Click to edit username
+    usernameDisplay.addEventListener('click', ()=>{
+      usernameDisplay.classList.add('hidden');
+      usernameInput.classList.remove('hidden');
+      usernameInput.value = usernameDisplay.textContent;
+      usernameInput.focus();
+      usernameInput.select();
+    });
+    
+    // Save username on blur or enter
+    const saveUsername = ()=>{
+      const newName = usernameInput.value.trim() || 'Guest';
+      usernameDisplay.textContent = newName;
+      usernameDisplay.classList.remove('hidden');
+      usernameInput.classList.add('hidden');
+      // Save to cookie
+      document.cookie = `dbz_username=${encodeURIComponent(newName)};max-age=31536000;path=/;SameSite=Lax`;
+    };
+    
+    usernameInput.addEventListener('blur', saveUsername);
+    usernameInput.addEventListener('keydown', e=>{
+      if(e.key === 'Enter') saveUsername();
+      if(e.key === 'Escape'){
+        usernameInput.classList.add('hidden');
+        usernameDisplay.classList.remove('hidden');
+      }
+    });
+  }
   }
 
-  function init(){ loadTheme(); loadHistory(); renderAggregates(); attachEvents(); }
+  function init(){ loadTheme(); loadUsername(); loadHistory(); renderAggregates(); attachEvents(); }
   if(document.readyState === 'complete' || document.readyState === 'interactive'){
     // Run on next tick to allow remaining synchronous parsing to finish
     setTimeout(init,0);
