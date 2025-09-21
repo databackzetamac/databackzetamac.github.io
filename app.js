@@ -79,10 +79,32 @@
   }
 
   function switchView(target){
-    dom.settingsView.classList.toggle('hidden', target!=='settings');
-    dom.sessionView.classList.toggle('hidden', target!=='session');
-    dom.resultsView.classList.toggle('hidden', target!=='results');
-    dom.statsView.classList.toggle('hidden', target!=='stats');
+    // Hide all views first
+    document.querySelectorAll('.panel').forEach(panel => {
+      panel.classList.add('hidden');
+      panel.classList.remove('active');
+    });
+    
+    // Show target view
+    switch(target){
+      case 'home':
+      case 'settings':
+        dom.settingsView.classList.remove('hidden');
+        dom.settingsView.classList.add('active');
+        break;
+      case 'session':
+        dom.sessionView.classList.remove('hidden');
+        dom.sessionView.classList.add('active');
+        break;
+      case 'results':
+        dom.resultsView.classList.remove('hidden');
+        dom.resultsView.classList.add('active');
+        break;
+      case 'stats':
+        dom.statsView.classList.remove('hidden');
+        dom.statsView.classList.add('active');
+        break;
+    }
   }
 
   function activateTab(tabEl){
@@ -109,9 +131,21 @@
 
   function navigateTab(target){
     switch(target){
-      case 'homeView': switchView('settings'); activateTab(dom.tabHome); break;
-      case 'sessionView': if(dom.tabTest.disabled) return; switchView('session'); activateTab(dom.tabTest); break;
-      case 'statsView': renderAggregates(); renderCharts(); switchView('stats'); activateTab(dom.tabStats); break;
+      case 'homeView': 
+        switchView('home'); 
+        activateTab(dom.tabHome); 
+        break;
+      case 'sessionView': 
+        if(dom.tabTest.disabled) return; 
+        switchView('session'); 
+        activateTab(dom.tabTest); 
+        break;
+      case 'statsView': 
+        renderAggregates(); 
+        renderCharts(); 
+        switchView('stats'); 
+        activateTab(dom.tabStats); 
+        break;
     }
   }
 
@@ -127,7 +161,14 @@
       endTime: Date.now()+duration*1000,
       score:0, streak:0, maxStreak:0,
       totalAnswered:0, correct:0, incorrect:0,
-      problems:[], ops, ranges, current:null
+      problems:[], ops, ranges, current:null,
+      // Enhanced analytics
+      operationStats: {}, // per-operation statistics
+      velocityHistory: [], // problems per second over time
+      currentVelocity: 0,
+      difficultyDistribution: {},
+      restartCount: 0, // track how many times user restarted
+      sessionType: 'completed' // 'completed', 'quit', 'restarted', 'timeout'
     };
   dom.tabTest.disabled = false; dom.tabTest.classList.remove('locked');
   navigateTab('sessionView');
@@ -149,7 +190,7 @@
     const remMs = state.endTime - Date.now();
     const rem = Math.max(0, remMs/1000);
     dom.timeRemaining.textContent = rem.toFixed(1);
-    if(remMs<=0) endSession();
+    if(remMs<=0) endSession('timeout');
   }
 
   function nextProblem(){
@@ -178,38 +219,125 @@
 
   function registerAnswer(isCorrect, given){
     const p = state.current;
-    const rec = { l:p.l,r:p.r,op:p.op,answer:p.answer,given,correct:isCorrect,t:Date.now()-state.started };
-    state.problems.push(rec); state.totalAnswered++;
-    if(isCorrect){ state.correct++; state.score++; state.streak++; if(state.streak>state.maxStreak) state.maxStreak=state.streak; dom.feedback.textContent='Correct'; dom.feedback.className='feedback ok'; }
-    else { state.incorrect++; state.streak=0; dom.feedback.textContent='Incorrect • '+p.answer; dom.feedback.className='feedback err'; }
+    const problemTime = Date.now()-state.started;
+    const timeSinceLast = state.problems.length > 0 ? problemTime - state.problems[state.problems.length-1].totalTime : problemTime;
+    const difficulty = calculateDifficulty(p.l, p.r, p.op);
+    
+    const rec = { 
+      l:p.l, r:p.r, op:p.op, answer:p.answer, given, correct:isCorrect, 
+      t:timeSinceLast, // time for this specific problem
+      totalTime:problemTime, // cumulative time since session start
+      difficulty: difficulty,
+      timestamp: Date.now()
+    };
+    
+    state.problems.push(rec); 
+    state.totalAnswered++;
+    
+    // Track per-operation stats
+    if(!state.operationStats[p.op]) {
+      state.operationStats[p.op] = {correct:0, incorrect:0, totalTime:0, count:0, avgTime:0, minTime:Infinity, maxTime:0};
+    }
+    const opStats = state.operationStats[p.op];
+    opStats.count++;
+    opStats.totalTime += timeSinceLast;
+    opStats.avgTime = opStats.totalTime / opStats.count;
+    opStats.minTime = Math.min(opStats.minTime, timeSinceLast);
+    opStats.maxTime = Math.max(opStats.maxTime, timeSinceLast);
+    
+    // Track difficulty distribution
+    state.difficultyDistribution[difficulty] = (state.difficultyDistribution[difficulty] || 0) + 1;
+    
+    if(isCorrect){ 
+      state.correct++; state.score++; state.streak++; 
+      opStats.correct++;
+      if(state.streak>state.maxStreak) state.maxStreak=state.streak; 
+      dom.feedback.textContent='Correct'; 
+      dom.feedback.className='feedback ok'; 
+    } else { 
+      state.incorrect++; state.streak=0; 
+      opStats.incorrect++;
+      dom.feedback.textContent='Incorrect • '+p.answer; 
+      dom.feedback.className='feedback err'; 
+    }
+    
+    // Update velocity metrics (problems per second)
+    const sessionTimeSeconds = problemTime / 1000;
+    state.currentVelocity = state.totalAnswered / sessionTimeSeconds;
+    state.velocityHistory.push({time: sessionTimeSeconds, velocity: state.currentVelocity});
+    
     dom.score.textContent = state.score;
     dom.streak.textContent = state.streak;
     if(state.totalAnswered>0){ dom.accuracyLive.textContent = (state.correct/state.totalAnswered*100).toFixed(0)+'%'; }
     nextProblem();
   }
 
-  function endSession(){
+  // Calculate problem difficulty based on numbers and operation
+  function calculateDifficulty(l, r, op) {
+    let base = 1;
+    switch(op) {
+      case '+': base = Math.max(l, r) / 10; break;
+      case '-': base = Math.max(l, r) / 10; break;
+      case '*': base = (l * r) / 50; break;
+      case '/': base = (l / r) / 5; break;
+    }
+    return Math.min(10, Math.max(1, Math.round(base)));
+  }
+
+  function endSession(sessionType = 'completed'){
     if(!state) return;
     if(timer){ clearInterval(timer); timer=null; }
-  buildSummary();
-  persistSession();
-  loadHistory();
-  renderAggregates();
-  switchView('results');
+    state.sessionType = sessionType;
+    buildSummary();
+    persistSession();
+    loadHistory();
+    renderAggregates();
+    switchView('results');
   }
 
   function buildSummary(){
     const acc = state.totalAnswered? (state.correct/state.totalAnswered*100).toFixed(1)+'%':'0%';
     const durActual = ((Date.now()-state.started)/1000).toFixed(1)+'s';
-    dom.summary.innerHTML = [
-      statCard('Score', state.score),
-      statCard('Answered', state.totalAnswered),
-      statCard('Correct', state.correct),
-      statCard('Incorrect', state.incorrect),
-      statCard('Accuracy', acc),
-      statCard('Max Streak', state.maxStreak),
-      statCard('Duration', durActual+' / '+state.duration+'s')
-    ].join('');
+    const avgTimePerProblem = state.totalAnswered ? ((Date.now()-state.started)/1000/state.totalAnswered).toFixed(2) : 0;
+    
+    // Operation breakdown for this session
+    const opBreakdown = Object.entries(state.operationStats).map(([op, stats]) => {
+      const acc = stats.count ? (stats.correct/stats.count*100).toFixed(0) : 0;
+      return `<div class="session-op-stat">
+        <span class="op">${op}</span>: ${stats.correct}/${stats.count} (${acc}%) • ${(stats.avgTime/1000).toFixed(2)}s avg
+      </div>`;
+    }).join('');
+    
+    const sessionTypeText = {
+      'completed': '✅ Completed',
+      'timeout': '⏰ Time Up', 
+      'quit': '🚪 Quit',
+      'restarted': '🔄 Restarted'
+    }[state.sessionType] || 'Finished';
+    
+    dom.summary.innerHTML = `
+      <div class="summary-header">
+        <h3>${sessionTypeText}</h3>
+        ${state.restartCount > 0 ? `<span class="restart-count">Restarts: ${state.restartCount}</span>` : ''}
+      </div>
+      <div class="summary-main">
+        ${[
+          statCard('Score', state.score),
+          statCard('Answered', state.totalAnswered),
+          statCard('Correct', state.correct),
+          statCard('Incorrect', state.incorrect),
+          statCard('Accuracy', acc),
+          statCard('Max Streak', state.maxStreak),
+          statCard('Duration', durActual+' / '+state.duration+'s'),
+          statCard('Avg/Problem', avgTimePerProblem+'s'),
+          statCard('Final Velocity', state.currentVelocity.toFixed(2)+' pps')
+        ].join('')}
+      </div>
+      ${opBreakdown ? `<div class="summary-operations">
+        <h4>Operation Performance</h4>
+        ${opBreakdown}
+      </div>` : ''}
+    `;
   }
   function statCard(label,val){ return '<div class="stat"><h4>'+label+'</h4><div class="val">'+val+'</div></div>'; }
 
@@ -217,9 +345,35 @@
     try{
       const raw = localStorage.getItem(LS_KEY);
       const list = raw? JSON.parse(raw):[];
-      list.push({ started:state.started,duration:state.duration,score:state.score,correct:state.correct,incorrect:state.incorrect,totalAnswered:state.totalAnswered,maxStreak:state.maxStreak,ops:state.ops,ranges:state.ranges });
+      
+      // Calculate advanced metrics before saving
+      const sessionDuration = (Date.now() - state.started) / 1000;
+      const avgTimePerProblem = state.totalAnswered > 0 ? sessionDuration / state.totalAnswered : 0;
+      
+      list.push({ 
+        started:state.started,
+        duration:state.duration,
+        score:state.score,
+        correct:state.correct,
+        incorrect:state.incorrect,
+        totalAnswered:state.totalAnswered,
+        maxStreak:state.maxStreak,
+        ops:state.ops,
+        ranges:state.ranges,
+        // Enhanced analytics
+        operationStats: state.operationStats,
+        velocityHistory: state.velocityHistory,
+        currentVelocity: state.currentVelocity,
+        difficultyDistribution: state.difficultyDistribution,
+        restartCount: state.restartCount,
+        sessionType: state.sessionType,
+        actualDuration: sessionDuration,
+        avgTimePerProblem: avgTimePerProblem,
+        problems: state.problems // Store individual problem data for calculus
+      });
+      
       localStorage.setItem(LS_KEY, JSON.stringify(list));
-  updateCookieAggregates(list);
+      updateCookieAggregates(list);
     }catch(e){ console.warn('Persist failed', e); }
   }
 
@@ -232,7 +386,26 @@
       const items = list.slice().reverse().slice(0,30).map(s=>{
         const acc = s.totalAnswered? (s.correct/s.totalAnswered*100).toFixed(0):'0';
         const date = new Date(s.started).toLocaleString();
-        return '<div class="session-item"><strong>'+s.score+'</strong><span>'+acc+'%</span><span>'+s.totalAnswered+'q</span><span class="badge">'+date+'</span></div>';
+        const sessionIcon = {
+          'completed': '✅',
+          'timeout': '⏰', 
+          'quit': '🚪',
+          'restarted': '🔄'
+        }[s.sessionType] || '';
+        const restartBadge = s.restartCount > 0 ? `<span class="restart-badge">R:${s.restartCount}</span>` : '';
+        const avgTime = s.avgTimePerProblem ? `${s.avgTimePerProblem.toFixed(1)}s/q` : '';
+        return `<div class="session-item enhanced">
+          <div class="session-main">
+            <strong>${sessionIcon} ${s.score}</strong>
+            <span class="accuracy">${acc}%</span>
+            <span class="questions">${s.totalAnswered}q</span>
+            ${avgTime ? `<span class="avg-time">${avgTime}</span>` : ''}
+          </div>
+          <div class="session-meta">
+            <span class="date">${date}</span>
+            ${restartBadge}
+          </div>
+        </div>`;
       });
       dom.statsList.innerHTML = items.join('');
       // Hero quick stats
@@ -257,10 +430,57 @@
     const bins = {}; // dynamic '0-10'
     const testsPerDay = {};
     const timePerDay = {};
+    
+    // Enhanced analytics
+    let totalRestarts = 0, completedTests = 0, quitTests = 0, timeoutTests = 0;
+    const operationTotals = {'add': {correct:0, count:0, totalTime:0}, 'sub': {correct:0, count:0, totalTime:0}, 
+                            'mul': {correct:0, count:0, totalTime:0}, 'div': {correct:0, count:0, totalTime:0}};
+    const difficultyTotals = {};
+    const velocityData = [];
+    let allProblems = [];
+    
     list.forEach(s=>{
-      totalTimeSec += s.duration;
+      totalTimeSec += s.actualDuration || s.duration;
       totalCorrect += s.correct;
       totalAnswered += s.totalAnswered;
+      
+      // Session type tracking
+      totalRestarts += s.restartCount || 0;
+      switch(s.sessionType) {
+        case 'completed': completedTests++; break;
+        case 'quit': quitTests++; break;
+        case 'timeout': timeoutTests++; break;
+        case 'restarted': /* counted in restarts */ break;
+      }
+      
+      // Aggregate operation stats
+      if(s.operationStats) {
+        Object.entries(s.operationStats).forEach(([op, stats]) => {
+          if(operationTotals[op]) {
+            operationTotals[op].correct += stats.correct;
+            operationTotals[op].count += stats.count;
+            operationTotals[op].totalTime += stats.totalTime;
+          }
+        });
+      }
+      
+      // Aggregate difficulty distribution
+      if(s.difficultyDistribution) {
+        Object.entries(s.difficultyDistribution).forEach(([diff, count]) => {
+          difficultyTotals[diff] = (difficultyTotals[diff] || 0) + count;
+        });
+      }
+      
+      // Collect velocity data
+      if(s.velocityHistory && s.velocityHistory.length > 0) {
+        velocityData.push(...s.velocityHistory.map(v => ({...v, sessionStart: s.started})));
+      }
+      
+      // Collect all problems for calculus
+      if(s.problems) {
+        allProblems.push(...s.problems.map(p => ({...p, sessionStart: s.started})));
+      }
+      
       const norm = s.score * (120 / s.duration);
       scoreHistory.push({ ts: s.started, norm: +norm.toFixed(2), raw: s.score });
       const binFloor = Math.floor(norm/10)*10;
@@ -268,29 +488,135 @@
       bins[key] = (bins[key]||0)+1;
       const day = new Date(s.started).toISOString().slice(0,10);
       testsPerDay[day] = (testsPerDay[day]||0)+1;
-      timePerDay[day] = (timePerDay[day]||0)+ s.duration;
+      timePerDay[day] = (timePerDay[day]||0)+ (s.actualDuration || s.duration);
     });
+    
     scoreHistory.sort((a,b)=>a.ts-b.ts);
     const avgPps = totalTimeSec? (totalCorrect/totalTimeSec).toFixed(2):'0.00';
-    return { totalTests, totalTimeSec, totalCorrect, totalAnswered, avgPps, scoreHistory, bins, testsPerDay, timePerDay };
+    
+    // Calculate calculus-based metrics
+    const calculus = calculateAdvancedMetrics(allProblems, scoreHistory, velocityData);
+    
+    return { 
+      totalTests, totalTimeSec, totalCorrect, totalAnswered, avgPps, scoreHistory, bins, testsPerDay, timePerDay,
+      // Enhanced metrics
+      totalRestarts, completedTests, quitTests, timeoutTests, operationTotals, difficultyTotals, velocityData, calculus
+    };
+  }
+
+  // Advanced calculus-based metrics
+  function calculateAdvancedMetrics(problems, scoreHistory, velocityData) {
+    if(problems.length < 2) return {improvementRate: 0, velocityTrend: 0, difficultyTrend: 0, learningCurve: 0};
+    
+    // Calculate improvement rate (derivative of performance over time)
+    const improvementRate = calculateDerivative(scoreHistory.map(p => p.norm), scoreHistory.map(p => p.ts));
+    
+    // Calculate velocity trend (how speed changes over time)
+    const velocityTrend = velocityData.length > 1 ? 
+      calculateDerivative(velocityData.map(v => v.velocity), velocityData.map(v => v.time)) : 0;
+    
+    // Learning curve analysis (accuracy improvement over problem count)
+    const accuracyOverTime = calculateMovingAverage(problems.map(p => p.correct ? 1 : 0), 10);
+    const learningCurve = accuracyOverTime.length > 1 ? 
+      (accuracyOverTime[accuracyOverTime.length-1] - accuracyOverTime[0]) / accuracyOverTime.length : 0;
+    
+    // Response time trend (how speed improves per problem type)
+    const timesByDifficulty = {};
+    problems.forEach(p => {
+      if(!timesByDifficulty[p.difficulty]) timesByDifficulty[p.difficulty] = [];
+      timesByDifficulty[p.difficulty].push(p.t);
+    });
+    
+    return {
+      improvementRate: improvementRate * 86400000, // per day
+      velocityTrend: velocityTrend * 3600000, // per hour  
+      learningCurve: learningCurve * 100, // percentage
+      difficultyTrend: Object.keys(timesByDifficulty).length
+    };
+  }
+
+  // Calculate derivative (rate of change)
+  function calculateDerivative(yValues, xValues) {
+    if(yValues.length < 2) return 0;
+    let sum = 0;
+    for(let i = 1; i < yValues.length; i++) {
+      const dy = yValues[i] - yValues[i-1];
+      const dx = xValues[i] - xValues[i-1];
+      sum += dx !== 0 ? dy / dx : 0;
+    }
+    return sum / (yValues.length - 1);
+  }
+
+  // Calculate moving average
+  function calculateMovingAverage(data, windowSize) {
+    const result = [];
+    for(let i = windowSize - 1; i < data.length; i++) {
+      const window = data.slice(i - windowSize + 1, i + 1);
+      result.push(window.reduce((a, b) => a + b, 0) / window.length);
+    }
+    return result;
   }
 
   function renderAggregates(){
     try{
-      const raw = localStorage.getItem(LS_KEY); if(!raw){ dom.aggregateMetrics.innerHTML=''; return; }
-      const list = JSON.parse(raw); if(!Array.isArray(list)||!list.length){ dom.aggregateMetrics.innerHTML=''; return; }
+      const raw = localStorage.getItem(LS_KEY); 
+      if(!raw){ 
+        dom.aggregateMetrics.innerHTML = '<div class="no-data"><h3>🎯 No sessions yet</h3><p>Complete some tests to see your analytics!</p></div>'; 
+        return; 
+      }
+      const list = JSON.parse(raw); 
+      if(!Array.isArray(list)||!list.length){ 
+        dom.aggregateMetrics.innerHTML = '<div class="no-data"><h3>🎯 No sessions yet</h3><p>Complete some tests to see your analytics!</p></div>'; 
+        return; 
+      }
+      
       const ag = computeAggregates(list);
       const totalMinutes = (ag.totalTimeSec/60).toFixed(1);
-      const avgScore = (ag.scoreHistory.reduce((a,c)=>a+c.raw,0)/ag.scoreHistory.length).toFixed(1);
-      dom.aggregateMetrics.innerHTML = [
-        metricTile('Total Tests', ag.totalTests),
+      const avgScore = ag.scoreHistory && ag.scoreHistory.length > 0 ? 
+        (ag.scoreHistory.reduce((a,c)=>a+c.raw,0)/ag.scoreHistory.length).toFixed(1) : '0';
+      
+      // Calculate operation-specific metrics
+      const opMetrics = Object.entries(ag.operationTotals || {}).map(([op, stats]) => {
+        const acc = stats.count ? (stats.correct/stats.count*100).toFixed(1) : 0;
+        const avgTime = stats.count ? (stats.totalTime/stats.count/1000).toFixed(2) : 0;
+        const symbol = opSymbol(op); // Convert 'add' -> '+', etc.
+        return `<div class="operation-metric">
+          <span class="op-symbol">${symbol}</span>
+          <span class="op-accuracy">${acc}%</span>
+          <span class="op-time">${avgTime}s avg</span>
+        </div>`;
+      }).join('');
+      
+      // Main metrics grid
+      const mainMetrics = [
+        metricTile('Total Tests', ag.totalTests || 0),
+        metricTile('Completed', ag.completedTests || 0),
+        metricTile('Restarts', ag.totalRestarts || 0),
         metricTile('Total Time (m)', totalMinutes),
         metricTile('Avg Score', avgScore),
-        metricTile('Avg PPS', ag.avgPps),
-        metricTile('Total Correct', ag.totalCorrect),
-        metricTile('Total Answered', ag.totalAnswered)
+        metricTile('Avg PPS', ag.avgPps || '0.00'),
+        metricTile('Total Correct', ag.totalCorrect || 0),
+        metricTile('Total Answered', ag.totalAnswered || 0),
+        metricTile('Improvement Rate', (ag.calculus?.improvementRate || 0).toFixed(2) + '/day'),
+        metricTile('Speed Trend', (ag.calculus?.velocityTrend || 0).toFixed(3) + '/hr'),
+        metricTile('Learning Curve', (ag.calculus?.learningCurve || 0).toFixed(1) + '%'),
+        metricTile('Quit Rate', ag.totalTests ? (ag.quitTests/ag.totalTests*100).toFixed(1)+'%' : '0%')
       ].join('');
-    }catch(e){ console.warn('Agg render failed', e); }
+      
+      dom.aggregateMetrics.innerHTML = `
+        <div class="metrics-section">
+          <h3>📊 Performance Analytics</h3>
+          <div class="metrics-grid">${mainMetrics}</div>
+        </div>
+        ${opMetrics ? `<div class="metrics-section">
+          <h3>⚡ Operation Breakdown</h3>
+          <div class="operation-metrics">${opMetrics}</div>
+        </div>` : ''}
+      `;
+    }catch(e){ 
+      console.warn('Agg render failed', e); 
+      dom.aggregateMetrics.innerHTML = '<div class="error-state"><h3>⚠️ Error loading stats</h3><p>Please try refreshing the page.</p></div>';
+    }
   }
   function metricTile(label,val){ return '<div class="metric-tile"><h4>'+label+'</h4><div class="val">'+val+'</div></div>'; }
 
@@ -342,7 +668,16 @@
 
   function updateCookieAggregates(list){ try { const ag = computeAggregates(list); const cookieObj = { totalTests:ag.totalTests, totalTimeSec:ag.totalTimeSec, avgPps:ag.avgPps, lastScore: ag.scoreHistory.at(-1)?.raw || 0, lastUpdated: Date.now() }; const val = encodeURIComponent(JSON.stringify(cookieObj)); document.cookie = 'dbz_stats='+val+';max-age=31536000;path=/;SameSite=Lax'; } catch(e){ /* ignore */ } }
 
-  function resetToSettings(){ switchView('settings'); state=null; }
+  function resetToSettings(){ 
+    switchView('home'); 
+    activateTab(dom.tabHome);
+    state=null; 
+    // Reset test tab to locked state
+    dom.tabTest.disabled = true; 
+    dom.tabTest.classList.add('locked');
+    // Clear any existing timers
+    if(timer){ clearInterval(timer); timer=null; }
+  }
 
   function toggleTheme(){ document.body.classList.toggle('light'); localStorage.setItem('dbz_theme', document.body.classList.contains('light')?'light':'dark'); }
   function loadTheme(){ const t = localStorage.getItem('dbz_theme'); if(t==='light') document.body.classList.add('light'); }
@@ -363,10 +698,26 @@
     dom.startBtn.addEventListener('click', startSession);
     dom.restartBtn.addEventListener('click', ()=>{ resetToSettings(); });
     dom.backHome.addEventListener('click', resetToSettings);
-    dom.quitBtn.addEventListener('click', endSession);
+    dom.quitBtn.addEventListener('click', ()=>{ endSession('quit'); });
     dom.answerInput.addEventListener('input', onAnswerInput);
     dom.answerInput.addEventListener('keydown', e=>{ if(e.key==='Enter') forceSubmit(); });
-    document.addEventListener('keydown', e=>{ if(e.code==='Space' && state && !dom.sessionView.classList.contains('hidden')){ e.preventDefault(); dom.answerInput.focus(); } });
+    document.addEventListener('keydown', e=>{
+      // Space to focus answer input during session
+      if(e.code==='Space' && state && !dom.sessionView.classList.contains('hidden')){ 
+        e.preventDefault(); 
+        dom.answerInput.focus(); 
+      }
+      // Shift+R to restart session
+      if(e.shiftKey && e.code==='KeyR' && state){
+        e.preventDefault();
+        if(confirm('Restart the current session? This will count as a restart in your stats.')){
+          state.restartCount++;
+          state.sessionType = 'restarted';
+          endSession('restarted');
+          startSession();
+        }
+      }
+    });
   dom.themeToggle.addEventListener('click', toggleTheme);
   dom.tabHome.addEventListener('click', ()=>navigateTab('homeView'));
   dom.tabTest.addEventListener('click', ()=>navigateTab('sessionView'));
@@ -408,7 +759,22 @@
   }
   }
 
-  function init(){ loadTheme(); loadUsername(); loadHistory(); renderAggregates(); attachEvents(); }
+  function init(){ 
+    // Verify all DOM elements exist
+    const missing = Object.entries(dom).filter(([key, el]) => !el).map(([key]) => key);
+    if(missing.length > 0) {
+      console.warn('Missing DOM elements:', missing);
+    }
+    
+    loadTheme(); 
+    loadUsername(); 
+    loadHistory(); 
+    renderAggregates(); 
+    attachEvents(); 
+    // Ensure we start on home view
+    switchView('home');
+    activateTab(dom.tabHome);
+  }
   if(document.readyState === 'complete' || document.readyState === 'interactive'){
     // Run on next tick to allow remaining synchronous parsing to finish
     setTimeout(init,0);

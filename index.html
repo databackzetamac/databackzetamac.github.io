@@ -184,7 +184,7 @@
             </div>
           </form>
         </section>
-  <section id="sessionView" class="panel glass" aria-label="Active Session" data-view="sessionView">
+  <section id="sessionView" class="panel glass hidden" aria-label="Active Session" data-view="sessionView">
           <div class="session-hud">
             <div class="metric"><span class="label">Time</span><span id="timeRemaining" class="value">--</span></div>
             <div class="metric"><span class="label">Score</span><span id="score" class="value">0</span></div>
@@ -203,19 +203,26 @@
           </div>
           <div class="session-controls">
             <button id="quitBtn" class="ghost">End Early</button>
+            <div class="keyboard-hints">
+              <span class="hint">⇧ + R to restart</span>
+              <span class="hint">Space to focus</span>
+            </div>
           </div>
         </section>
-        <section id="resultsView" class="panel glass" aria-label="Results" data-view="resultsView">
+        <section id="resultsView" class="panel glass hidden" aria-label="Results" data-view="resultsView">
           <header class="panel-header">
             <h1>Session Summary</h1>
           </header>
           <div id="summary" class="summary-grid"></div>
+          <div class="results-note">
+            <p>📈 Enhanced analytics with calculus-based metrics available in Stats tab</p>
+          </div>
           <div class="actions-row">
             <button id="restartBtn" class="primary">New Session</button>
             <button id="backHome" class="ghost">Back to Settings</button>
           </div>
         </section>
-        <section id="statsView" class="panel glass" aria-label="Statistics" data-view="statsView">
+        <section id="statsView" class="panel glass hidden" aria-label="Statistics" data-view="statsView">
           <header class="panel-header">
             <h1>Performance & Analytics</h1>
             <p class="subtitle">Progression • Distribution • Activity</p>

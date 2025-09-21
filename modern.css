@@ -693,3 +693,228 @@ canvas { width:100%; height:auto; image-rendering: -webkit-optimize-contrast; -w
 .light .history-list .session-item { background:rgba(255,255,255,0.6); }
 .light .chart-card { background:rgba(255,255,255,0.65); }
 .light .metric-tile { background:rgba(255,255,255,0.65); }
+
+/* Enhanced Analytics Styling */
+.metrics-section {
+  margin-bottom: 2rem;
+}
+
+.metrics-section h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text);
+  opacity: 0.9;
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.8rem;
+}
+
+.operation-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.operation-metric {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
+.op-symbol {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.op-accuracy {
+  font-weight: 600;
+  color: var(--ok);
+}
+
+.op-time {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+/* Enhanced Session History */
+.session-item.enhanced {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  margin-bottom: 0.5rem;
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
+.session-main {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin-bottom: 0.5rem;
+}
+
+.session-main strong {
+  font-size: 1.1rem;
+  min-width: 60px;
+}
+
+.session-main .accuracy {
+  background: rgba(46, 204, 113, 0.2);
+  color: var(--ok);
+  padding: 0.2rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.session-main .questions,
+.session-main .avg-time {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+}
+
+.session-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}
+
+.restart-badge {
+  background: rgba(79, 156, 255, 0.2);
+  color: var(--accent);
+  padding: 0.2rem 0.4rem;
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+/* Enhanced Summary Styling */
+.summary-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.summary-header h3 {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.restart-count {
+  background: rgba(79, 156, 255, 0.2);
+  color: var(--accent);
+  padding: 0.3rem 0.6rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.summary-main {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.summary-operations {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  -webkit-backdrop-filter: blur(5px);
+  backdrop-filter: blur(5px);
+}
+
+.summary-operations h4 {
+  margin: 0 0 1rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.session-op-stat {
+  background: var(--glass-bg);
+  border-radius: var(--radius-sm);
+  padding: 0.8rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+}
+
+.session-op-stat .op {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+/* Keyboard Hints */
+.keyboard-hints {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+  justify-content: center;
+}
+
+.hint {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  background: rgba(255,255,255,0.05);
+  padding: 0.3rem 0.6rem;
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.1);
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+}
+
+/* Results Note */
+.results-note {
+  text-align: center;
+  margin: 1.5rem 0;
+  padding: 1rem;
+  background: rgba(79, 156, 255, 0.1);
+  border: 1px solid rgba(79, 156, 255, 0.3);
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  color: var(--text-dim);
+}
+
+/* No Data and Error States */
+.no-data, .error-state {
+  text-align: center;
+  padding: 3rem 2rem;
+  color: var(--text-dim);
+}
+
+.no-data h3, .error-state h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1.5rem;
+  color: var(--text);
+}
+
+.no-data p, .error-state p {
+  margin: 0;
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
