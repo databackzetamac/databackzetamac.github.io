@@ -16,7 +16,12 @@
         <nav class="navbar glass-enhanced" aria-label="Primary navigation">
           <div class="nav-section nav-left">
             <div class="brand-enhanced">
-              <div class="brand-icon">⚡</div>
+              <div class="brand-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="3"/>
+                  <path d="M12 1v6M12 17v6M4.22 4.22l4.24 4.24M15.54 15.54l4.24 4.24M1 12h6M17 12h6M4.22 19.78l4.24-4.24M15.54 8.46l4.24-4.24"/>
+                </svg>
+              </div>
               <div class="brand-text">
                 <span class="brand-name">DataBack</span>
                 <span class="brand-accent">Zetamac</span>
@@ -27,15 +32,30 @@
           <div class="nav-section nav-center">
             <div class="tabbar-enhanced" role="tablist" aria-label="Main views">
               <button class="tab-enhanced active" role="tab" aria-selected="true" id="tabHome" data-target="homeView">
-                <span class="tab-icon">🏠</span>
+                <span class="tab-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                    <polyline points="9,22 9,12 15,12 15,22"/>
+                  </svg>
+                </span>
                 <span class="tab-label">Home</span>
               </button>
               <button class="tab-enhanced locked" role="tab" aria-selected="false" id="tabTest" data-target="sessionView" disabled>
-                <span class="tab-icon">⚡</span>
+                <span class="tab-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="13,2 3,14 12,14 11,22 21,10 12,10"/>
+                  </svg>
+                </span>
                 <span class="tab-label">Test</span>
               </button>
               <button class="tab-enhanced" role="tab" aria-selected="false" id="tabStats" data-target="statsView">
-                <span class="tab-icon">📊</span>
+                <span class="tab-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="20" x2="18" y2="10"/>
+                    <line x1="12" y1="20" x2="12" y2="4"/>
+                    <line x1="6" y1="20" x2="6" y2="14"/>
+                  </svg>
+                </span>
                 <span class="tab-label">Stats</span>
               </button>
               <div class="tab-slider-enhanced"></div>
@@ -45,7 +65,12 @@
           <div class="nav-section nav-right">
             <div class="user-profile" id="userProfile">
               <div class="avatar-ring">
-                <div class="avatar">👤</div>
+                <div class="avatar">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                  </svg>
+                </div>
               </div>
               <div class="username-container">
                 <span class="username" id="usernameDisplay">Guest</span>
@@ -54,10 +79,26 @@
             </div>
             <div class="nav-controls">
               <button id="themeToggle" class="control-btn" aria-label="Toggle theme">
-                <span class="theme-icon">🌗</span>
+                <span class="theme-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="5"/>
+                    <line x1="12" y1="1" x2="12" y2="3"/>
+                    <line x1="12" y1="21" x2="12" y2="23"/>
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                    <line x1="1" y1="12" x2="3" y2="12"/>
+                    <line x1="21" y1="12" x2="23" y2="12"/>
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                  </svg>
+                </span>
               </button>
               <a href="https://github.com/databackzetamac/databackzetamac.github.io" class="control-btn" target="_blank" rel="noopener" aria-label="GitHub Repo">
-                <span class="github-icon">⚡</span>
+                <span class="github-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/>
+                  </svg>
+                </span>
               </a>
             </div>
           </div>

@@ -113,10 +113,15 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.2rem;
   box-shadow: 0 4px 16px -4px rgba(79,156,255,0.6),
               inset 0 1px 0 rgba(255,255,255,0.3);
   animation: brandPulse 4s ease-in-out infinite;
+}
+
+.brand-icon svg {
+  width: 20px;
+  height: 20px;
+  color: white;
 }
 
 .brand-text {
@@ -176,8 +181,16 @@ body {
 }
 
 .tab-enhanced .tab-icon {
-  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: transform 0.3s ease;
+}
+
+.tab-enhanced .tab-icon svg {
+  width: 16px;
+  height: 16px;
+  color: currentColor;
 }
 
 .tab-enhanced .tab-label {
@@ -270,7 +283,12 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1rem;
+  color: white;
+}
+
+.avatar svg {
+  width: 18px;
+  height: 18px;
   color: white;
 }
 
@@ -356,8 +374,16 @@ body {
 }
 
 .theme-icon, .github-icon {
-  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: transform 0.3s ease;
+}
+
+.theme-icon svg, .github-icon svg {
+  width: 18px;
+  height: 18px;
+  color: currentColor;
 }
 
 .control-btn:hover .theme-icon,
@@ -594,6 +620,11 @@ canvas { width:100%; height:auto; image-rendering: -webkit-optimize-contrast; -w
     height: 36px;
   }
   
+  .brand-icon svg {
+    width: 18px;
+    height: 18px;
+  }
+  
   .brand-name {
     font-size: 1rem;
   }
@@ -603,8 +634,9 @@ canvas { width:100%; height:auto; image-rendering: -webkit-optimize-contrast; -w
     font-size: 0.75rem;
   }
   
-  .tab-enhanced .tab-icon {
-    font-size: 0.9rem;
+  .tab-enhanced .tab-icon svg {
+    width: 14px;
+    height: 14px;
   }
   
   .user-profile {
@@ -619,7 +651,11 @@ canvas { width:100%; height:auto; image-rendering: -webkit-optimize-contrast; -w
   .avatar {
     width: 28px;
     height: 28px;
-    font-size: 0.9rem;
+  }
+  
+  .avatar svg {
+    width: 16px;
+    height: 16px;
   }
   
   .username {
@@ -629,6 +665,11 @@ canvas { width:100%; height:auto; image-rendering: -webkit-optimize-contrast; -w
   .control-btn {
     width: 36px;
     height: 36px;
+  }
+  
+  .control-btn svg {
+    width: 16px;
+    height: 16px;
   }
 }
 
