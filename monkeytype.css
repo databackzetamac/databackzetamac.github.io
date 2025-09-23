@@ -281,6 +281,121 @@ body {
 }
 
 /* =====================================
+   RANGE DETAILS
+   ===================================== */
+.range-details {
+  background: var(--bg-card);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  margin-top: var(--space-xl);
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.range-section {
+  margin-bottom: var(--space-lg);
+}
+
+.range-section:last-child {
+  margin-bottom: 0;
+}
+
+.range-header {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-md);
+  cursor: pointer;
+  padding: var(--space-sm) 0;
+  transition: all var(--transition-fast);
+}
+
+.range-header:hover {
+  background: var(--bg-secondary);
+  margin: 0 calc(var(--space-sm) * -1);
+  padding: var(--space-sm);
+  border-radius: var(--radius-md);
+}
+
+.range-op-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: var(--accent-main);
+  color: var(--bg-primary);
+  border-radius: var(--radius-md);
+  font-size: var(--font-lg);
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.range-info {
+  flex: 1;
+}
+
+.range-name {
+  font-size: var(--font-base);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--space-xs);
+}
+
+.range-description {
+  font-size: var(--font-sm);
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.range-inputs {
+  margin-top: var(--space-md);
+  margin-left: calc(32px + var(--space-md));
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.input-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.input-row label {
+  min-width: 120px;
+  font-size: var(--font-sm);
+  color: var(--text-secondary);
+}
+
+.input-row input {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: var(--font-sm);
+  padding: var(--space-sm);
+  border-radius: var(--radius-sm);
+  width: 60px;
+  text-align: center;
+}
+
+.input-row input:focus {
+  border-color: var(--accent-main);
+  outline: none;
+}
+
+.input-row span {
+  color: var(--text-secondary);
+  font-size: var(--font-sm);
+}
+
+.duration-section .range-op-icon {
+  background: var(--text-secondary);
+}
+
+/* =====================================
    TEST INTERFACE
    ===================================== */
 .test-interface {
@@ -682,4 +797,13 @@ body {
   .config-options {
     justify-content: flex-start;
   }
+}
+
+/* =====================================
+   PRESET VISIBILITY CONTROLS
+   ===================================== */
+
+/* Hide range inputs by default */
+.range-inputs.hidden {
+  display: none;
 }

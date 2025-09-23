@@ -57,21 +57,103 @@
             </div>
             
             <div class="config-section">
-              <div class="config-title">time</div>
+              <div class="config-title">difficulty preset</div>
               <div class="config-options">
-                <button class="config-btn" data-time="30">30</button>
-                <button class="config-btn active" data-time="60">60</button>
-                <button class="config-btn" data-time="120">120</button>
-                <button class="config-btn" data-time="300">300</button>
+                <button class="config-btn active" data-preset="default">default</button>
+                <button class="config-btn" data-preset="easier">easier</button>
+                <button class="config-btn" data-preset="harder">harder</button>
+                <button class="config-btn" data-preset="custom">custom</button>
               </div>
             </div>
             
             <div class="config-section">
-              <div class="config-title">range</div>
+              <div class="config-title">time</div>
               <div class="config-options">
-                <button class="config-btn active" data-range="basic">basic (2-12)</button>
-                <button class="config-btn" data-range="medium">medium (2-100)</button>
-                <button class="config-btn" data-range="hard">hard (2-999)</button>
+                <button class="config-btn" data-time="30">30</button>
+                <button class="config-btn" data-time="60">60</button>
+                <button class="config-btn active" data-time="120">120</button>
+                <button class="config-btn" data-time="300">300</button>
+              </div>
+            </div>
+            
+            <!-- Detailed Range Configuration -->
+            <div class="range-details" id="range-details">
+              <div class="range-section">
+                <div class="range-header">
+                  <span class="range-op-icon">+</span>
+                  <div class="range-info">
+                    <div class="range-name">Addition</div>
+                    <div class="range-description">Range: (<span id="add-min-display">2</span> to <span id="add-max-display">100</span>) + (<span id="add-b-min-display">2</span> to <span id="add-b-max-display">100</span>)</div>
+                  </div>
+                </div>
+                <div class="range-inputs hidden" id="add-inputs">
+                  <div class="input-row">
+                    <label>First number:</label>
+                    <input type="number" id="add-min" value="2" min="1" max="999" placeholder="min">
+                    <span>to</span>
+                    <input type="number" id="add-max" value="100" min="1" max="999" placeholder="max">
+                  </div>
+                  <div class="input-row">
+                    <label>Second number:</label>
+                    <input type="number" id="add-b-min" value="2" min="1" max="999" placeholder="min">
+                    <span>to</span>
+                    <input type="number" id="add-b-max" value="100" min="1" max="999" placeholder="max">
+                  </div>
+                </div>
+              </div>
+
+              <div class="range-section">
+                <div class="range-header">
+                  <span class="range-op-icon">−</span>
+                  <div class="range-info">
+                    <div class="range-name">Subtraction</div>
+                    <div class="range-description">Addition problems in reverse.</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="range-section">
+                <div class="range-header">
+                  <span class="range-op-icon">×</span>
+                  <div class="range-info">
+                    <div class="range-name">Multiplication</div>
+                    <div class="range-description">Range: (<span id="mul-min-display">2</span> to <span id="mul-max-display">12</span>) × (<span id="mul-b-min-display">2</span> to <span id="mul-b-max-display">12</span>)</div>
+                  </div>
+                </div>
+                <div class="range-inputs hidden" id="mul-inputs">
+                  <div class="input-row">
+                    <label>First number:</label>
+                    <input type="number" id="mul-min" value="2" min="1" max="99" placeholder="min">
+                    <span>to</span>
+                    <input type="number" id="mul-max" value="12" min="1" max="99" placeholder="max">
+                  </div>
+                  <div class="input-row">
+                    <label>Second number:</label>
+                    <input type="number" id="mul-b-min" value="2" min="1" max="99" placeholder="min">
+                    <span>to</span>
+                    <input type="number" id="mul-b-max" value="12" min="1" max="99" placeholder="max">
+                  </div>
+                </div>
+              </div>
+
+              <div class="range-section">
+                <div class="range-header">
+                  <span class="range-op-icon">÷</span>
+                  <div class="range-info">
+                    <div class="range-name">Division</div>
+                    <div class="range-description">Multiplication problems in reverse.</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="range-section duration-section">
+                <div class="range-header">
+                  <span class="range-op-icon">⏱</span>
+                  <div class="range-info">
+                    <div class="range-name">Duration</div>
+                    <div class="range-description"><span id="duration-display">60</span> seconds</div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -173,28 +255,6 @@
               </div>
             </div>
           </div>
-          
-          <div class="settings-section">
-            <h3 class="settings-title">ranges</h3>
-            <div class="range-settings">
-              <div class="range-group">
-                <label>addition / subtraction</label>
-                <div class="range-inputs">
-                  <input type="number" value="2" min="1" max="999" id="add-min">
-                  <span>to</span>
-                  <input type="number" value="100" min="1" max="999" id="add-max">
-                </div>
-              </div>
-              <div class="range-group">
-                <label>multiplication / division</label>
-                <div class="range-inputs">
-                  <input type="number" value="2" min="1" max="99" id="mul-min">
-                  <span>to</span>
-                  <input type="number" value="12" min="1" max="99" id="mul-max">
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -221,6 +281,6 @@
     </main>
   </div>
 
-  <script src="app_new.js"></script>
+  <script src="app_fixed.js"></script>
 </body>
 </html>

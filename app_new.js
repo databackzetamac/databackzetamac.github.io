@@ -5,15 +5,29 @@ class ZetamacApp {
     this.settings = {
       operations: ['add', 'sub', 'mul', 'div'],
       time: 60,
-      range: 'basic',
+      preset: 'default',
+      customRanges: {
+        add: { min: 2, max: 100, bMin: 2, bMax: 100 },
+        mul: { min: 2, max: 12, bMin: 2, bMax: 12 }
+      },
+      ranges: {
+        default: {
+          add: { min: 2, max: 100, bMin: 2, bMax: 100 },
+          mul: { min: 2, max: 12, bMin: 2, bMax: 12 }
+        },
+        harder: {
+          add: { min: 10, max: 999, bMin: 10, bMax: 999 },
+          mul: { min: 5, max: 25, bMin: 5, bMax: 25 }
+        },
+        easier: {
+          add: { min: 1, max: 9, bMin: 1, bMax: 9 },
+          mul: { min: 1, max: 9, bMin: 1, bMax: 9 }
+        }
+      },
+      duration: 120,
       theme: 'dark',
       sound: false,
-      quickRestart: 'tab',
-      ranges: {
-        basic: { min: 2, max: 12 },
-        medium: { min: 2, max: 100 },
-        hard: { min: 2, max: 999 }
-      }
+      quickRestart: 'tab'
     };
     
     this.gameState = {
@@ -35,6 +49,7 @@ class ZetamacApp {
     this.bindEvents();
     this.loadSettings();
     this.updateDisplay();
+    this.updateRangeDisplay();
     this.showPage('test');
   }
 
@@ -53,19 +68,47 @@ class ZetamacApp {
         const parent = e.target.parentElement;
         const type = parent.parentElement.querySelector('.config-title').textContent;
         
-        // Remove active from siblings
-        parent.querySelectorAll('.config-btn').forEach(b => b.classList.remove('active'));
-        // Add active to clicked button
-        e.target.classList.add('active');
-        
-        // Update settings
+        // Update settings based on button type
         if (type === 'operations') {
           // Handle multiple selection for operations
           this.updateOperations();
+        } else if (type === 'difficulty preset') {
+          // Handle preset selection
+          parent.querySelectorAll('.config-btn').forEach(b => b.classList.remove('active'));
+          e.target.classList.add('active');
+          this.settings.preset = e.target.dataset.preset;
+          this.updateRangeDisplay();
+          this.toggleCustomInputs();
         } else if (type === 'time') {
+          // Handle time selection
+          parent.querySelectorAll('.config-btn').forEach(b => b.classList.remove('active'));
+          e.target.classList.add('active');
           this.settings.time = parseInt(e.target.dataset.time);
-        } else if (type === 'range') {
-          this.settings.range = e.target.dataset.range;
+          this.updateRangeDisplay();
+        }
+      });
+    });
+
+    // Range input changes
+    ['add-min', 'add-max', 'add-b-min', 'add-b-max', 'mul-min', 'mul-max', 'mul-b-min', 'mul-b-max'].forEach(id => {
+      const input = document.getElementById(id);
+      if (input) {
+        input.addEventListener('input', () => {
+          this.updateCustomRanges();
+          this.updateRangeDisplay();
+        });
+      }
+    });
+
+    // Range header clicks for custom mode
+    document.querySelectorAll('.range-header').forEach(header => {
+      header.addEventListener('click', (e) => {
+        if (this.settings.preset === 'custom') {
+          const section = header.parentElement;
+          const inputs = section.querySelector('.range-inputs');
+          if (inputs) {
+            inputs.classList.toggle('hidden');
+          }
         }
       });
     });
@@ -121,6 +164,74 @@ class ZetamacApp {
       });
     });
 
+      getCurrentRanges() {
+        if (this.settings.preset === 'custom') {
+          return this.settings.customRanges;
+        }
+        return this.settings.ranges[this.settings.preset];
+      }
+
+      updateRangeDisplay() {
+        const ranges = this.getCurrentRanges();
+    
+    // Update the display text
+    document.getElementById('add-range-display').textContent = 
+      `${ranges.add.min}-${ranges.add.max} + ${ranges.add.bMin}-${ranges.add.bMax}`;
+    document.getElementById('sub-range-display').textContent = 
+      `${ranges.add.min}-${ranges.add.max} - ${ranges.add.bMin}-${ranges.add.bMax}`;
+    document.getElementById('mul-range-display').textContent = 
+      `${ranges.mul.min}-${ranges.mul.max} × ${ranges.mul.bMin}-${ranges.mul.bMax}`;
+    document.getElementById('div-range-display').textContent = 
+      `${ranges.mul.min}-${ranges.mul.max} ÷ ${ranges.mul.bMin}-${ranges.mul.bMax}`;
+    
+    document.getElementById('duration-display').textContent = 
+      `${this.settings.duration} seconds`;
+    
+    // Update active preset button
+    document.querySelectorAll('.preset-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelector(`[data-preset="${this.settings.preset}"]`).classList.add('active');
+    
+    // Update custom inputs if in custom mode
+    if (this.settings.preset === 'custom') {
+      document.getElementById('add-min').value = ranges.add.min;
+      document.getElementById('add-max').value = ranges.add.max;
+      document.getElementById('add-b-min').value = ranges.add.bMin;
+      document.getElementById('add-b-max').value = ranges.add.bMax;
+      document.getElementById('mul-min').value = ranges.mul.min;
+      document.getElementById('mul-max').value = ranges.mul.max;
+      document.getElementById('mul-b-min').value = ranges.mul.bMin;
+      document.getElementById('mul-b-max').value = ranges.mul.bMax;
+      document.getElementById('duration-input').value = this.settings.duration;
+    }
+  }
+
+  toggleCustomInputs() {
+    const customInputs = document.getElementById('custom-inputs');
+    const isCustom = this.settings.preset === 'custom';
+    customInputs.style.display = isCustom ? 'block' : 'none';
+  }
+
+  updateCustomRanges() {
+    if (this.settings.preset !== 'custom') return;
+    
+    this.settings.customRanges = {
+      add: {
+        min: parseInt(document.getElementById('add-min').value) || 1,
+        max: parseInt(document.getElementById('add-max').value) || 10,
+        bMin: parseInt(document.getElementById('add-b-min').value) || 1,
+        bMax: parseInt(document.getElementById('add-b-max').value) || 10
+      },
+      mul: {
+        min: parseInt(document.getElementById('mul-min').value) || 1,
+        max: parseInt(document.getElementById('mul-max').value) || 12,
+        bMin: parseInt(document.getElementById('mul-b-min').value) || 1,
+        bMax: parseInt(document.getElementById('mul-b-max').value) || 12
+    
+    this.settings.duration = parseInt(document.getElementById('duration-input').value) || 60;
+    this.updateRangeDisplay();
+    this.saveSettings();
+  }
+
     // Global keyboard events
     document.addEventListener('keydown', (e) => {
       if (!this.gameState.isRunning && this.currentPage === 'test' && 
@@ -174,32 +285,32 @@ class ZetamacApp {
 
   generateProblem() {
     const op = this.settings.operations[Math.floor(Math.random() * this.settings.operations.length)];
-    const range = this.settings.ranges[this.settings.range];
+    const ranges = this.getCurrentRanges();
     
     let a, b, answer, operator;
     
     switch (op) {
       case 'add':
-        a = this.randomInt(range.min, range.max);
-        b = this.randomInt(range.min, range.max);
+        a = this.randomInt(ranges.add.min, ranges.add.max);
+        b = this.randomInt(ranges.add.bMin, ranges.add.bMax);
         answer = a + b;
         operator = '+';
         break;
       case 'sub':
-        a = this.randomInt(range.min, range.max);
-        b = this.randomInt(range.min, Math.min(a, range.max));
+        a = this.randomInt(ranges.add.min, ranges.add.max);
+        b = this.randomInt(ranges.add.bMin, Math.min(a, ranges.add.bMax));
         answer = a - b;
         operator = '−';
         break;
       case 'mul':
-        a = this.randomInt(range.min, Math.min(range.max, 12));
-        b = this.randomInt(range.min, Math.min(range.max, 12));
+        a = this.randomInt(ranges.mul.min, ranges.mul.max);
+        b = this.randomInt(ranges.mul.bMin, ranges.mul.bMax);
         answer = a * b;
         operator = '×';
         break;
       case 'div':
-        b = this.randomInt(range.min, Math.min(range.max, 12));
-        answer = this.randomInt(range.min, Math.min(range.max, 12));
+        b = this.randomInt(ranges.mul.bMin, ranges.mul.bMax);
+        answer = this.randomInt(ranges.mul.min, ranges.mul.max);
         a = b * answer;
         operator = '÷';
         break;
