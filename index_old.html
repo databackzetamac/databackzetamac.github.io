@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>DataBack Zetamac</title>
+    <meta name="description" content="Modern arithmetic speed drill with analytics." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="modern.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <div class="navbar-container">
+        <nav class="navbar glass-enhanced" aria-label="Primary navigation">
+          <div class="nav-section nav-left">
+            <div class="brand-enhanced">
+              <div class="brand-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="3"/>
+                  <path d="M12 1v6M12 17v6M4.22 4.22l4.24 4.24M15.54 15.54l4.24 4.24M1 12h6M17 12h6M4.22 19.78l4.24-4.24M15.54 8.46l4.24-4.24"/>
+                </svg>
+              </div>
+              <div class="brand-text">
+                <span class="brand-name">DataBack</span>
+                <span class="brand-accent">Zetamac</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="nav-section nav-center">
+            <div class="tabbar-enhanced" role="tablist" aria-label="Main views">
+              <button class="tab-enhanced active" role="tab" aria-selected="true" id="tabHome" data-target="homeView">
+                <span class="tab-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                    <polyline points="9,22 9,12 15,12 15,22"/>
+                  </svg>
+                </span>
+                <span class="tab-label">Home</span>
+              </button>
+              <button class="tab-enhanced locked" role="tab" aria-selected="false" id="tabTest" data-target="sessionView" disabled>
+                <span class="tab-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="13,2 3,14 12,14 11,22 21,10 12,10"/>
+                  </svg>
+                </span>
+                <span class="tab-label">Test</span>
+              </button>
+              <button class="tab-enhanced" role="tab" aria-selected="false" id="tabStats" data-target="statsView">
+                <span class="tab-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="20" x2="18" y2="10"/>
+                    <line x1="12" y1="20" x2="12" y2="4"/>
+                    <line x1="6" y1="20" x2="6" y2="14"/>
+                  </svg>
+                </span>
+                <span class="tab-label">Stats</span>
+              </button>
+              <div class="tab-slider-enhanced"></div>
+            </div>
+          </div>
+          
+          <div class="nav-section nav-right">
+            <div class="user-profile" id="userProfile">
+              <div class="avatar-ring">
+                <div class="avatar">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                  </svg>
+                </div>
+              </div>
+              <div class="username-container">
+                <span class="username" id="usernameDisplay">Guest</span>
+                <input type="text" class="username-input hidden" id="usernameInput" maxlength="20" aria-label="Edit username" placeholder="Enter your name" />
+              </div>
+            </div>
+            <div class="nav-controls">
+              <button id="themeToggle" class="control-btn" aria-label="Toggle theme">
+                <span class="theme-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="5"/>
+                    <line x1="12" y1="1" x2="12" y2="3"/>
+                    <line x1="12" y1="21" x2="12" y2="23"/>
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                    <line x1="1" y1="12" x2="3" y2="12"/>
+                    <line x1="21" y1="12" x2="23" y2="12"/>
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                  </svg>
+                </span>
+              </button>
+              <a href="https://github.com/databackzetamac/databackzetamac.github.io" class="control-btn" target="_blank" rel="noopener" aria-label="GitHub Repo">
+                <span class="github-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/>
+                  </svg>
+                </span>
+              </a>
+            </div>
+          </div>
+        </nav>
+      </div>
+      <main id="app" class="content-area">
+        <section id="settingsView" class="panel glass active" aria-label="Test Settings" data-view="homeView">
+          <div class="hero-widget glass" aria-label="App overview widget">
+            <div class="hw-left">
+              <h1 class="app-title">DataBack <span class="quantum-accent">Zetamac</span></h1>
+              <p class="tagline">Revolutionary arithmetic training with quantum-powered analytics. No accounts. No tracking. Pure performance.</p>
+              <div class="quick-stats" id="quickStats">
+                <div class="qs-item"><span class="qs-label">Best</span><span class="qs-value" id="qsBest">--</span></div>
+                <div class="qs-item"><span class="qs-label">Avg</span><span class="qs-value" id="qsAvg">--</span></div>
+                <div class="qs-item"><span class="qs-label">Sessions</span><span class="qs-value" id="qsCount">--</span></div>
+              </div>
+            </div>
+            <div class="hw-art" aria-hidden="true">
+              <div class="quantum-core"></div>
+              <div class="quantum-orb orb-1"></div>
+              <div class="quantum-orb orb-2"></div>
+              <div class="quantum-orb orb-3"></div>
+              <div class="quantum-orb orb-4"></div>
+              <div class="neural-rings">
+                <div class="neural-ring"></div>
+                <div class="neural-ring"></div>
+                <div class="neural-ring"></div>
+                <div class="neural-ring"></div>
+              </div>
+              <div class="quantum-particles">
+                <div class="particle"></div>
+                <div class="particle"></div>
+                <div class="particle"></div>
+                <div class="particle"></div>
+                <div class="particle"></div>
+                <div class="particle"></div>
+                <div class="particle"></div>
+                <div class="particle"></div>
+                <div class="particle"></div>
+              </div>
+            </div>
+          </div>
+          <header class="panel-header">
+            <h1>Configure Session</h1>
+            <p class="subtitle">Speed drill • 2 minute default • instant feedback</p>
+          </header>
+          <form id="settingsForm" class="settings-grid">
+            <div class="card-group">
+              <h2 class="group-title">Operations</h2>
+              <div class="chips" id="opChips">
+                <label class="chip"><input type="checkbox" name="ops" value="add" checked><span>+</span></label>
+                <label class="chip"><input type="checkbox" name="ops" value="sub" checked><span>−</span></label>
+                <label class="chip"><input type="checkbox" name="ops" value="mul" checked><span>×</span></label>
+                <label class="chip"><input type="checkbox" name="ops" value="div" checked><span>÷</span></label>
+              </div>
+            </div>
+            <div class="card-group ranges">
+              <h2 class="group-title">Ranges</h2>
+              <div class="range-cluster">
+                <h3>Add / Sub</h3>
+                <div class="inputs">
+                  <label>A Min<input type="number" id="add_aMin" value="2"/></label>
+                  <label>A Max<input type="number" id="add_aMax" value="100"/></label>
+                  <label>B Min<input type="number" id="add_bMin" value="2"/></label>
+                  <label>B Max<input type="number" id="add_bMax" value="100"/></label>
+                </div>
+              </div>
+              <div class="range-cluster">
+                <h3>Multiply</h3>
+                <div class="inputs">
+                  <label>L Min<input type="number" id="mul_aMin" value="2"/></label>
+                  <label>L Max<input type="number" id="mul_aMax" value="12"/></label>
+                  <label>R Min<input type="number" id="mul_bMin" value="2"/></label>
+                  <label>R Max<input type="number" id="mul_bMax" value="100"/></label>
+                </div>
+              </div>
+              <div class="range-cluster">
+                <h3>Division</h3>
+                <div class="inputs">
+                  <label>Div Min<input type="number" id="div_divisorMin" value="2"/></label>
+                  <label>Div Max<input type="number" id="div_divisorMax" value="12"/></label>
+                  <label>Q Min<input type="number" id="div_quotientMin" value="2"/></label>
+                  <label>Q Max<input type="number" id="div_quotientMax" value="100"/></label>
+                </div>
+              </div>
+            </div>
+            <div class="card-group">
+              <h2 class="group-title">Duration</h2>
+              <label class="select-wrap" id="durationLabel">Duration
+                <select id="duration">
+                  <option value="30">30 s</option>
+                  <option value="60">1 min</option>
+                  <option value="120" selected>2 min</option>
+                  <option value="300">5 min</option>
+                </select>
+              </label>
+            </div>
+            <div class="actions-row">
+              <button type="button" id="startBtn" class="primary lg">Start Session →</button>
+            </div>
+          </form>
+        </section>
+  <section id="sessionView" class="panel glass hidden" aria-label="Active Session" data-view="sessionView">
+          <div class="session-hud">
+            <div class="metric"><span class="label">Time</span><span id="timeRemaining" class="value">--</span></div>
+            <div class="metric"><span class="label">Score</span><span id="score" class="value">0</span></div>
+            <div class="metric"><span class="label">Streak</span><span id="streak" class="value">0</span></div>
+            <div class="metric"><span class="label">Acc</span><span id="accuracyLive" class="value">--</span></div>
+          </div>
+          <div class="problem-wrap inactive" role="group" aria-label="Current Problem">
+            <div class="expr" id="problemExpr">
+              <span id="leftOperand" class="operand"></span>
+              <span id="operator" class="operator"></span>
+              <span id="rightOperand" class="operand"></span>
+              <span class="operator eq">=</span>
+            </div>
+            <input id="answerInput" class="answer" type="text" inputmode="numeric" autocomplete="off" aria-label="Answer" disabled />
+            <div id="feedback" class="feedback" aria-live="polite"></div>
+          </div>
+          <div class="session-controls">
+            <button id="quitBtn" class="ghost">End Early</button>
+            <div class="keyboard-hints">
+              <span class="hint">⇧ + R to restart</span>
+              <span class="hint">Space to focus</span>
+            </div>
+          </div>
+        </section>
+        <section id="resultsView" class="panel glass hidden" aria-label="Results" data-view="resultsView">
+          <header class="panel-header">
+            <h1>Session Summary</h1>
+          </header>
+          <div id="summary" class="summary-grid"></div>
+          <div class="results-note">
+            <p>📈 Enhanced analytics with calculus-based metrics available in Stats tab</p>
+          </div>
+          <div class="actions-row">
+            <button id="restartBtn" class="primary">New Session</button>
+            <button id="backHome" class="ghost">Back to Settings</button>
+          </div>
+        </section>
+        <section id="statsView" class="panel glass hidden" aria-label="Statistics" data-view="statsView">
+          <header class="panel-header">
+            <h1>Performance & Analytics</h1>
+            <p class="subtitle">Progression • Distribution • Activity</p>
+          </header>
+          <div class="stats-metrics" id="aggregateMetrics">
+            <!-- populated dynamically -->
+          </div>
+          <div class="charts-grid">
+            <div class="chart-card">
+              <h3>Score Progression <small>(normalized to 120s)</small></h3>
+              <canvas id="progressChart" width="800" height="200" aria-label="Score progression line chart"></canvas>
+            </div>
+            <div class="chart-card">
+              <h3>Score Distribution <small>(bins of 10)</small></h3>
+              <canvas id="distributionChart" width="800" height="200" aria-label="Score distribution histogram"></canvas>
+            </div>
+            <div class="chart-card">
+              <h3>Tests Per Day</h3>
+              <canvas id="testsPerDayChart" width="800" height="180" aria-label="Tests per day bar chart"></canvas>
+            </div>
+            <div class="chart-card">
+              <h3>Time Spent Per Day (minutes)</h3>
+              <canvas id="timePerDayChart" width="800" height="180" aria-label="Time spent per day bar chart"></canvas>
+            </div>
+          </div>
+          <div class="recent-wrapper">
+            <h3>Recent Sessions</h3>
+            <div id="statsList" class="history-list">No sessions yet.</div>
+          </div>
+        </section>
+      </main>
+      <footer class="site-footer">
+        <span>Local data only • Future analytics & charts coming</span>
+      </footer>
+    </div>
+  <script src="app.js"></script>
+  </body>
+</html>
