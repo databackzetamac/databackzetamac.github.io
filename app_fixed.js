@@ -51,6 +51,7 @@ class ZetamacApp {
     this.updateDisplay();
     this.updateRangeDisplay();
     this.updateConfigVisibility();
+    this.updateStatsDisplay(); // Initialize stats display
     this.showPage('test');
   }
 
@@ -182,7 +183,7 @@ class ZetamacApp {
     const viewStatsBtn = document.getElementById('view-stats-btn');
     if (viewStatsBtn) {
       viewStatsBtn.addEventListener('click', () => {
-        this.showPage('about');
+        this.showPage('stats');
       });
     }
 
@@ -372,6 +373,11 @@ class ZetamacApp {
       document.getElementById('test-results').classList.add('hidden');
     }
     
+    // Update stats when visiting stats page
+    if (page === 'stats') {
+      this.updateStatsDisplay();
+    }
+    
     this.currentPage = page;
   }
 
@@ -530,7 +536,10 @@ class ZetamacApp {
     const accuracy = this.gameState.totalProblems > 0 ? 
       (this.gameState.correctAnswers / this.gameState.totalProblems * 100).toFixed(1) : 0;
     
-    document.getElementById('final-score').textContent = this.gameState.problemsSolved;
+    // Calculate problems per minute
+    const problemsPerMinute = Math.round(this.gameState.problemsSolved / (this.settings.time / 60));
+    
+    document.getElementById('final-score').textContent = problemsPerMinute;
     document.getElementById('accuracy').textContent = `${accuracy}%`;
     document.getElementById('total-problems').textContent = this.gameState.totalProblems;
     document.getElementById('test-duration').textContent = `${this.settings.time}s`;
@@ -591,8 +600,11 @@ class ZetamacApp {
       gamesPlayed: 0,
       totalProblems: 0,
       totalCorrect: 0,
-      bestScore: 0,
-      averageAccuracy: 0
+      bestScores: {}, // duration -> best score (e.g., "30": 25, "60": 45, "120": 85)
+      averageProblemsPerMinute: 0,
+      testHistory: [], // Array of test results
+      dailyTests: {}, // Date -> number of tests
+      totalTimeSpent: 0 // in seconds
     };
   }
 
@@ -600,23 +612,282 @@ class ZetamacApp {
     const accuracy = this.gameState.totalProblems > 0 ? 
       (this.gameState.correctAnswers / this.gameState.totalProblems) : 0;
     
+    const testDuration = this.settings.time;
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+    const problemsPerMinute = (this.gameState.problemsSolved / (testDuration / 60));
+    
+    // Create test result object
+    const testResult = {
+      id: Date.now(),
+      date: new Date().toISOString(),
+      score: this.gameState.problemsSolved,
+      accuracy: accuracy,
+      totalProblems: this.gameState.totalProblems,
+      correctAnswers: this.gameState.correctAnswers,
+      duration: testDuration,
+      preset: this.settings.preset,
+      operations: [...this.settings.operations],
+      timeSpent: testDuration,
+      problemsPerMinute: problemsPerMinute
+    };
+    
     this.stats.gamesPlayed++;
     this.stats.totalProblems += this.gameState.totalProblems;
     this.stats.totalCorrect += this.gameState.correctAnswers;
-    this.stats.bestScore = Math.max(this.stats.bestScore, this.gameState.problemsSolved);
-    this.stats.averageAccuracy = this.stats.totalProblems > 0 ? 
-      (this.stats.totalCorrect / this.stats.totalProblems) : 0;
+    
+    // Update best score for this duration
+    const durationKey = testDuration.toString();
+    if (!this.stats.bestScores[durationKey] || this.gameState.problemsSolved > this.stats.bestScores[durationKey]) {
+      this.stats.bestScores[durationKey] = this.gameState.problemsSolved;
+    }
+    
+    // Calculate average problems per minute across all tests
+    this.stats.totalTimeSpent += testDuration;
+    this.stats.averageProblemsPerMinute = this.stats.totalTimeSpent > 0 ? 
+      (this.stats.totalProblems / (this.stats.totalTimeSpent / 60)) : 0;
+    
+    // Add to test history (keep last 100 tests)
+    this.stats.testHistory.unshift(testResult);
+    if (this.stats.testHistory.length > 100) {
+      this.stats.testHistory = this.stats.testHistory.slice(0, 100);
+    }
+    
+    // Update daily test count
+    if (!this.stats.dailyTests[today]) {
+      this.stats.dailyTests[today] = 0;
+    }
+    this.stats.dailyTests[today]++;
     
     localStorage.setItem('zetamac-stats', JSON.stringify(this.stats));
     
-    // Update display elements if they exist
-    const gamesPlayedEl = document.getElementById('total-tests');
-    const bestScoreEl = document.getElementById('games-played');
-    const avgAccuracyEl = document.getElementById('avg-accuracy');
+    // Update display elements
+    this.updateStatsDisplay();
+  }
+
+  updateStatsDisplay() {
+    // Update basic stats
+    const totalTestsEl = document.getElementById('total-tests');
+    const avgProblemsPerMinEl = document.getElementById('avg-problems-per-min');
+    const totalTimeEl = document.getElementById('total-time');
     
-    if (gamesPlayedEl) gamesPlayedEl.textContent = this.stats.gamesPlayed;
-    if (bestScoreEl) bestScoreEl.textContent = this.stats.bestScore;
-    if (avgAccuracyEl) avgAccuracyEl.textContent = `${(this.stats.averageAccuracy * 100).toFixed(1)}%`;
+    if (totalTestsEl) totalTestsEl.textContent = this.stats.gamesPlayed;
+    if (avgProblemsPerMinEl) avgProblemsPerMinEl.textContent = Math.round(this.stats.averageProblemsPerMinute);
+    if (totalTimeEl) {
+      const hours = Math.floor(this.stats.totalTimeSpent / 3600);
+      const minutes = Math.floor((this.stats.totalTimeSpent % 3600) / 60);
+      totalTimeEl.textContent = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+    }
+    
+    // Update best scores for different durations
+    this.updateBestScores();
+    
+    // Update contribution graph
+    this.updateContributionGraph();
+    
+    // Update test log
+    this.updateTestLog();
+  }
+
+  updateBestScores() {
+    const bestScoresContainer = document.getElementById('best-scores');
+    if (!bestScoresContainer) return;
+    
+    bestScoresContainer.innerHTML = '';
+    
+    // Common test durations
+    const durations = [15, 30, 60, 120, 300];
+    const durationLabels = {
+      15: '15s',
+      30: '30s', 
+      60: '1m',
+      120: '2m',
+      300: '5m'
+    };
+    
+    durations.forEach(duration => {
+      const score = this.stats.bestScores[duration.toString()] || 0;
+      const scoreItem = document.createElement('div');
+      scoreItem.className = 'best-score-item';
+      
+      scoreItem.innerHTML = `
+        <div class="score-duration">${durationLabels[duration]}</div>
+        <div class="score-value">${score}</div>
+      `;
+      
+      bestScoresContainer.appendChild(scoreItem);
+    });
+  }
+
+  updateContributionGraph() {
+    const graphContainer = document.getElementById('contribution-graph');
+    if (!graphContainer) return;
+    
+    // Clear existing graph
+    graphContainer.innerHTML = '';
+    
+    // Create graph for last 365 days
+    const today = new Date();
+    const oneYearAgo = new Date(today.getTime() - (365 * 24 * 60 * 60 * 1000));
+    
+    // Create months header
+    const monthsHeader = document.createElement('div');
+    monthsHeader.className = 'graph-months';
+    
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    
+    for (let i = 0; i < 12; i++) {
+      const month = document.createElement('span');
+      month.className = 'graph-month';
+      month.textContent = months[(oneYearAgo.getMonth() + i) % 12];
+      monthsHeader.appendChild(month);
+    }
+    graphContainer.appendChild(monthsHeader);
+    
+    // Create days container
+    const daysContainer = document.createElement('div');
+    daysContainer.className = 'graph-days';
+    
+    // Create 52 weeks (7 days each)
+    for (let week = 0; week < 52; week++) {
+      const weekColumn = document.createElement('div');
+      weekColumn.className = 'graph-week';
+      
+      for (let day = 0; day < 7; day++) {
+        const currentDate = new Date(oneYearAgo.getTime() + ((week * 7 + day) * 24 * 60 * 60 * 1000));
+        const dateString = currentDate.toISOString().split('T')[0];
+        
+        const daySquare = document.createElement('div');
+        daySquare.className = 'graph-day';
+        
+        const testCount = this.stats.dailyTests[dateString] || 0;
+        daySquare.setAttribute('data-count', testCount);
+        daySquare.setAttribute('data-date', dateString);
+        daySquare.title = `${testCount} tests on ${currentDate.toLocaleDateString()}`;
+        
+        // Set intensity based on test count
+        if (testCount === 0) {
+          daySquare.classList.add('level-0');
+        } else if (testCount <= 2) {
+          daySquare.classList.add('level-1');
+        } else if (testCount <= 5) {
+          daySquare.classList.add('level-2');
+        } else if (testCount <= 10) {
+          daySquare.classList.add('level-3');
+        } else {
+          daySquare.classList.add('level-4');
+        }
+        
+        weekColumn.appendChild(daySquare);
+      }
+      
+      daysContainer.appendChild(weekColumn);
+    }
+    
+    graphContainer.appendChild(daysContainer);
+  }
+
+  updateTestLog() {
+    const logContainer = document.getElementById('test-log');
+    if (!logContainer) return;
+    
+    // Clear existing log
+    logContainer.innerHTML = '';
+    
+    if (this.stats.testHistory.length === 0) {
+      logContainer.innerHTML = '<div class="log-empty">No tests completed yet</div>';
+      return;
+    }
+    
+    // Show last 10 tests
+    const recentTests = this.stats.testHistory.slice(0, 10);
+    
+    recentTests.forEach(test => {
+      const logItem = document.createElement('div');
+      logItem.className = 'log-item';
+      
+      const date = new Date(test.date);
+      const timeAgo = this.getTimeAgo(date);
+      
+      logItem.innerHTML = `
+        <div class="log-header">
+          <span class="log-score">${test.score}</span>
+          <span class="log-accuracy">${(test.accuracy * 100).toFixed(1)}%</span>
+          <span class="log-time">${timeAgo}</span>
+        </div>
+        <div class="log-details">
+          <span class="log-preset">${test.preset}</span>
+          <span class="log-operations">${test.operations.join(' ')}</span>
+          <span class="log-duration">${test.duration}s</span>
+        </div>
+      `;
+      
+      logContainer.appendChild(logItem);
+    });
+  }
+
+  getTimeAgo(date) {
+    const now = new Date();
+    const diffInSeconds = Math.floor((now - date) / 1000);
+    
+    if (diffInSeconds < 60) return 'just now';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
+    
+    return date.toLocaleDateString();
+  }
+
+  // Debug method to add sample data (remove in production)
+  generateSampleData() {
+    const today = new Date();
+    for (let i = 0; i < 100; i++) {
+      const date = new Date(today.getTime() - (Math.random() * 365 * 24 * 60 * 60 * 1000));
+      const dateString = date.toISOString().split('T')[0];
+      const testCount = Math.floor(Math.random() * 10);
+      
+      if (testCount > 0) {
+        this.stats.dailyTests[dateString] = testCount;
+        
+        // Add test history entries
+        for (let j = 0; j < testCount; j++) {
+          this.stats.testHistory.push({
+            id: Date.now() + i * 1000 + j,
+            date: date.toISOString(),
+            score: Math.floor(Math.random() * 50) + 10,
+            accuracy: 0.6 + Math.random() * 0.4,
+            totalProblems: Math.floor(Math.random() * 80) + 20,
+            correctAnswers: Math.floor(Math.random() * 60) + 15,
+            duration: [30, 60, 120, 300][Math.floor(Math.random() * 4)],
+            preset: ['default', 'easier', 'harder'][Math.floor(Math.random() * 3)],
+            operations: ['add', 'sub', 'mul', 'div'].slice(0, Math.floor(Math.random() * 4) + 1),
+            timeSpent: [30, 60, 120, 300][Math.floor(Math.random() * 4)]
+          });
+        }
+      }
+    }
+    
+    // Sort test history by date (newest first)
+    this.stats.testHistory.sort((a, b) => new Date(b.date) - new Date(a.date));
+    this.stats.testHistory = this.stats.testHistory.slice(0, 100);
+    
+    localStorage.setItem('zetamac-stats', JSON.stringify(this.stats));
+  }
+
+  // Method to clear all stats (for testing)
+  clearStats() {
+    this.stats = {
+      gamesPlayed: 0,
+      totalProblems: 0,
+      totalCorrect: 0,
+      bestScore: 0,
+      averageAccuracy: 0,
+      testHistory: [],
+      dailyTests: {},
+      totalTimeSpent: 0
+    };
+    localStorage.setItem('zetamac-stats', JSON.stringify(this.stats));
+    this.updateStatsDisplay();
   }
 }
 

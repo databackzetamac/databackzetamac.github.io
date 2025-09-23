@@ -5,7 +5,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>DataBack Zetamac</title>
   <meta name="description" content="Monkeytype-inspired arithmetic training with real-time analytics">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="precon              <div class="about-stats">
+                <div class="about-stat">
+                  <span class="about-value" id="total-tests">0</span>
+                  <span class="about-label">tests completed</span>
+                </div>
+                <div class="about-stat">
+                  <span class="about-value" id="avg-problems-per-min">0</span>
+                  <span class="about-label">avg problems/min</span>
+                </div>
+                <div class="about-stat">
+                  <span class="about-value" id="total-time">0</span>
+                  <span class="about-label">time typing</span>
+                </div>
+              </div>
+              
+              <!-- Best scores per duration -->
+              <div class="best-scores-section">
+                <h3 class="section-title">Personal Bests</h3>
+                <div class="best-scores" id="best-scores">
+                  <!-- Best scores will be populated by JavaScript -->
+                </div>
+              </div>//fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="monkeytype.css">
@@ -23,7 +44,7 @@
         <nav class="nav">
           <button class="nav-item active" data-page="test">test</button>
           <button class="nav-item" data-page="settings">settings</button>
-          <button class="nav-item" data-page="about">about</button>
+          <button class="nav-item" data-page="stats">stats</button>
         </nav>
         
         <div class="header-stats">
@@ -258,10 +279,10 @@
         </div>
       </div>
 
-      <!-- About Page -->
-      <div class="page" id="about-page">
+      <!-- Stats Page -->
+      <div class="page" id="stats-page">
         <div class="about-container">
-          <h2 class="page-title">about</h2>
+          <h2 class="page-title">stats</h2>
           <div class="about-content">
             <h3>The Arithmetic Game</h3>
             <p>The Arithmetic Game is a fast-paced speed drill where you are given two minutes to solve as many arithmetic problems as you can.</p>
@@ -291,14 +312,47 @@
             
             <p>If you have any questions, please contact arithmetic@zetamac.com.</p>
             
-            <div class="about-stats">
-              <div class="about-stat">
-                <span class="about-value" id="total-tests">0</span>
-                <span class="about-label">tests completed</span>
+            <div class="stats-section">
+              <div class="about-stats">
+                <div class="about-stat">
+                  <span class="about-value" id="total-tests">0</span>
+                  <span class="about-label">tests completed</span>
+                </div>
+                <div class="about-stat">
+                  <span class="about-value" id="best-score">0</span>
+                  <span class="about-label">best score</span>
+                </div>
+                <div class="about-stat">
+                  <span class="about-value" id="avg-accuracy">0%</span>
+                  <span class="about-label">avg accuracy</span>
+                </div>
+                <div class="about-stat">
+                  <span class="about-value" id="total-time">0m</span>
+                  <span class="about-label">time practiced</span>
+                </div>
               </div>
-              <div class="about-stat">
-                <span class="about-value" id="total-time">0m</span>
-                <span class="about-label">time practiced</span>
+              
+              <div class="contribution-section">
+                <h4>Activity</h4>
+                <div class="contribution-container">
+                  <div id="contribution-graph" class="contribution-graph"></div>
+                  <div class="contribution-legend">
+                    <span class="legend-text">Less</span>
+                    <div class="legend-squares">
+                      <div class="legend-square level-0"></div>
+                      <div class="legend-square level-1"></div>
+                      <div class="legend-square level-2"></div>
+                      <div class="legend-square level-3"></div>
+                      <div class="legend-square level-4"></div>
+                    </div>
+                    <span class="legend-text">More</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="test-log-section">
+                <h4>Recent Tests</h4>
+                <div id="test-log" class="test-log"></div>
               </div>
             </div>
           </div>
