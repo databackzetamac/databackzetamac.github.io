@@ -807,3 +807,35 @@ body {
 .range-inputs.hidden {
   display: none;
 }
+
+/* =====================================
+   ABOUT PAGE STYLES
+   ===================================== */
+
+.operation-details {
+  margin: 20px 0;
+}
+
+.operation-details h4 {
+  color: var(--accent-main);
+  margin-bottom: 15px;
+  font-size: 1.1em;
+}
+
+.operation-item {
+  margin-bottom: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-primary);
+}
+
+.operation-item:last-child {
+  border-bottom: none;
+}
+
+.operation-item strong {
+  color: var(--text-primary);
+}
+
+.about-content p:last-of-type {
+  margin-top: 20px;
+}

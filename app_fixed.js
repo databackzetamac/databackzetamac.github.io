@@ -116,13 +116,72 @@ class ZetamacApp {
           this.submitAnswer();
         }
       });
+      
+      // Auto-advance on correct answer
+      answerInput.addEventListener('input', (e) => {
+        if (this.gameState.isRunning && this.gameState.currentProblem) {
+          const userAnswer = parseInt(e.target.value);
+          const correctAnswer = this.gameState.currentProblem.answer;
+          
+          // Check if the answer is correct and complete
+          if (!isNaN(userAnswer) && userAnswer === correctAnswer) {
+            // Add visual feedback
+            e.target.style.backgroundColor = '#e2b714';
+            e.target.style.color = '#323437';
+            
+            // Small delay to show the answer briefly
+            setTimeout(() => {
+              // Reset input styling
+              e.target.style.backgroundColor = '';
+              e.target.style.color = '';
+              this.submitAnswer();
+            }, 150);
+          } else {
+            // Reset styling for incorrect answers
+            e.target.style.backgroundColor = '';
+            e.target.style.color = '';
+          }
+        }
+      });
     }
 
     // Start test button
-    const startBtn = document.getElementById('start-test');
+    const startBtn = document.getElementById('start-btn');
     if (startBtn) {
       startBtn.addEventListener('click', () => {
         this.startTest();
+      });
+    }
+
+    // Restart and quit buttons
+    const restartBtn = document.getElementById('restart-btn');
+    if (restartBtn) {
+      restartBtn.addEventListener('click', () => {
+        this.restartTest();
+      });
+    }
+
+    const quitBtn = document.getElementById('quit-btn');
+    if (quitBtn) {
+      quitBtn.addEventListener('click', () => {
+        this.endTest();
+      });
+    }
+
+    // Try again button
+    const tryAgainBtn = document.getElementById('try-again-btn');
+    if (tryAgainBtn) {
+      tryAgainBtn.addEventListener('click', () => {
+        this.resetToStart();
+        this.startTest();
+      });
+    }
+
+    // View stats button
+    const viewStatsBtn = document.getElementById('view-stats-btn');
+    if (viewStatsBtn) {
+      viewStatsBtn.addEventListener('click', () => {
+        this.showPage('about');
       });
     }
 
@@ -153,7 +212,7 @@ class ZetamacApp {
     // Global keyboard events
     document.addEventListener('keydown', (e) => {
       if (!this.gameState.isRunning && this.currentPage === 'test' && 
-          document.getElementById('test-config').style.display !== 'none') {
+          document.getElementById('start-test').style.display !== 'none') {
         // Start test on any key when on start screen
         if (e.key !== 'Tab' && e.key !== 'Shift' && e.key !== 'Alt' && e.key !== 'Control') {
           this.startTest();
@@ -301,6 +360,13 @@ class ZetamacApp {
     document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
     document.getElementById(`${page}-page`).style.display = 'block';
     
+    // Show test elements for test page
+    if (page === 'test') {
+      document.getElementById('start-test').style.display = 'block';
+      document.getElementById('test-interface').style.display = 'none';
+      document.getElementById('test-results').style.display = 'none';
+    }
+    
     this.currentPage = page;
   }
 
@@ -320,6 +386,10 @@ class ZetamacApp {
       case 'sub':
         a = this.randomInt(ranges.add.min, ranges.add.max);
         b = this.randomInt(ranges.add.bMin, Math.min(a, ranges.add.bMax));
+        // Ensure non-negative result
+        if (b > a) {
+          [a, b] = [b, a];
+        }
         answer = a - b;
         operator = '−';
         break;
@@ -356,7 +426,7 @@ class ZetamacApp {
       problems: []
     };
     
-    document.getElementById('test-config').style.display = 'none';
+    document.getElementById('start-test').style.display = 'none';
     document.getElementById('test-interface').style.display = 'block';
     
     this.generateNewProblem();
@@ -374,14 +444,16 @@ class ZetamacApp {
     this.gameState.currentProblem = this.generateProblem();
     this.gameState.totalProblems++;
     
-    // Update display
-    document.getElementById('problem-display').textContent = 
-      `${this.gameState.currentProblem.a} ${this.gameState.currentProblem.operator} ${this.gameState.currentProblem.b} =`;
+    // Update display elements
+    document.getElementById('left-operand').textContent = this.gameState.currentProblem.a;
+    document.getElementById('operator').textContent = this.gameState.currentProblem.operator;
+    document.getElementById('right-operand').textContent = this.gameState.currentProblem.b;
     
     // Clear input
     const input = document.getElementById('answer-input');
     if (input) {
       input.value = '';
+      input.focus();
     }
   }
 
@@ -416,7 +488,7 @@ class ZetamacApp {
   startTimer() {
     this.timer = setInterval(() => {
       this.gameState.timeLeft--;
-      document.getElementById('time-left').textContent = this.gameState.timeLeft;
+      document.getElementById('timer').textContent = this.gameState.timeLeft;
       
       if (this.gameState.timeLeft <= 0) {
         this.endTest();
@@ -424,7 +496,7 @@ class ZetamacApp {
     }, 1000);
     
     // Initial display
-    document.getElementById('time-left').textContent = this.gameState.timeLeft;
+    document.getElementById('timer').textContent = this.gameState.timeLeft;
   }
 
   restartTest() {
@@ -449,13 +521,15 @@ class ZetamacApp {
       (this.gameState.correctAnswers / this.gameState.totalProblems * 100).toFixed(1) : 0;
     
     document.getElementById('final-score').textContent = this.gameState.problemsSolved;
-    document.getElementById('final-accuracy').textContent = `${accuracy}%`;
-    document.getElementById('final-total').textContent = this.gameState.totalProblems;
+    document.getElementById('accuracy').textContent = `${accuracy}%`;
+    document.getElementById('total-problems').textContent = this.gameState.totalProblems;
+    document.getElementById('test-duration').textContent = `${this.settings.time}s`;
   }
 
   resetToStart() {
     document.getElementById('test-results').style.display = 'none';
-    document.getElementById('test-config').style.display = 'block';
+    document.getElementById('test-interface').style.display = 'none';
+    document.getElementById('start-test').style.display = 'block';
     this.gameState.isRunning = false;
   }
 
@@ -522,10 +596,14 @@ class ZetamacApp {
     
     localStorage.setItem('zetamac-stats', JSON.stringify(this.stats));
     
-    // Update display
-    document.getElementById('games-played').textContent = this.stats.gamesPlayed;
-    document.getElementById('best-score').textContent = this.stats.bestScore;
-    document.getElementById('avg-accuracy').textContent = `${(this.stats.averageAccuracy * 100).toFixed(1)}%`;
+    // Update display elements if they exist
+    const gamesPlayedEl = document.getElementById('total-tests');
+    const bestScoreEl = document.getElementById('games-played');
+    const avgAccuracyEl = document.getElementById('avg-accuracy');
+    
+    if (gamesPlayedEl) gamesPlayedEl.textContent = this.stats.gamesPlayed;
+    if (bestScoreEl) bestScoreEl.textContent = this.stats.bestScore;
+    if (avgAccuracyEl) avgAccuracyEl.textContent = `${(this.stats.averageAccuracy * 100).toFixed(1)}%`;
   }
 }
 
