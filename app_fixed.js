@@ -63,6 +63,15 @@ class ZetamacApp {
       });
     });
 
+    // Start test button
+    const startBtn = document.getElementById('start-btn');
+    if (startBtn) {
+      startBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.startTest();
+      });
+    }
+
     // Configuration buttons
     document.querySelectorAll('.config-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
@@ -145,14 +154,6 @@ class ZetamacApp {
       });
     }
 
-    // Start test button
-    const startBtn = document.getElementById('start-btn');
-    if (startBtn) {
-      startBtn.addEventListener('click', () => {
-        this.startTest();
-      });
-    }
-
     // Restart and quit buttons
     const restartBtn = document.getElementById('restart-btn');
     if (restartBtn) {
@@ -212,7 +213,8 @@ class ZetamacApp {
     // Global keyboard events
     document.addEventListener('keydown', (e) => {
       if (!this.gameState.isRunning && this.currentPage === 'test' && 
-          document.getElementById('start-test').style.display !== 'none') {
+          (document.getElementById('test-config').style.display !== 'none' || 
+           document.getElementById('start-test').style.display !== 'none')) {
         // Start test on any key when on start screen
         if (e.key !== 'Tab' && e.key !== 'Shift' && e.key !== 'Alt' && e.key !== 'Control') {
           this.startTest();
@@ -362,9 +364,12 @@ class ZetamacApp {
     
     // Show test elements for test page
     if (page === 'test') {
+      document.getElementById('test-config').style.display = 'block';
       document.getElementById('start-test').style.display = 'block';
       document.getElementById('test-interface').style.display = 'none';
+      document.getElementById('test-interface').classList.add('hidden');
       document.getElementById('test-results').style.display = 'none';
+      document.getElementById('test-results').classList.add('hidden');
     }
     
     this.currentPage = page;
@@ -426,8 +431,11 @@ class ZetamacApp {
       problems: []
     };
     
+    // Hide config and start sections, show test interface
+    document.getElementById('test-config').style.display = 'none';
     document.getElementById('start-test').style.display = 'none';
     document.getElementById('test-interface').style.display = 'block';
+    document.getElementById('test-interface').classList.remove('hidden');
     
     this.generateNewProblem();
     this.startTimer();
@@ -515,7 +523,9 @@ class ZetamacApp {
 
   showResults() {
     document.getElementById('test-interface').style.display = 'none';
+    document.getElementById('test-interface').classList.add('hidden');
     document.getElementById('test-results').style.display = 'block';
+    document.getElementById('test-results').classList.remove('hidden');
     
     const accuracy = this.gameState.totalProblems > 0 ? 
       (this.gameState.correctAnswers / this.gameState.totalProblems * 100).toFixed(1) : 0;
@@ -528,7 +538,10 @@ class ZetamacApp {
 
   resetToStart() {
     document.getElementById('test-results').style.display = 'none';
+    document.getElementById('test-results').classList.add('hidden');
     document.getElementById('test-interface').style.display = 'none';
+    document.getElementById('test-interface').classList.add('hidden');
+    document.getElementById('test-config').style.display = 'block';
     document.getElementById('start-test').style.display = 'block';
     this.gameState.isRunning = false;
   }
